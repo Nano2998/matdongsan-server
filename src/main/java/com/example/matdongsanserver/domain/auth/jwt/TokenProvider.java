@@ -45,7 +45,9 @@ public class TokenProvider {
         this.secretkey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // access, refresh Token 생성
+    /*
+    access, refresh Token 생성
+     */
     public TokenDto createToken(String email, String role) {
         long now = (new Date()).getTime();
 
@@ -69,7 +71,9 @@ public class TokenProvider {
         return TokenDto.of(accessToken, refreshToken);
     }
 
-    // token이 유효한 지 검사
+    /*
+    토큰의 유효성 검사
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -86,7 +90,9 @@ public class TokenProvider {
         }
     }
 
-    // token이 만료되었는지 검사
+    /*
+    토큰이 만료되었는지 검사
+     */
     public boolean validateExpire(String token) {
         try {
             Jwts.parserBuilder()
@@ -99,7 +105,9 @@ public class TokenProvider {
         }
     }
 
-    // token으로부터 Authentication 객체를 만들어 리턴하는 메소드
+    /*
+     토큰으로부터 Authentication 객체를 생성
+     */
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(secretKey)

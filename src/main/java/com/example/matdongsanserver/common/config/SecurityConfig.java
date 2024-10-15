@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.common.config;
 
+import com.example.matdongsanserver.domain.auth.handler.OAuth2SuccessHandler;
 import com.example.matdongsanserver.domain.auth.service.KakaoMemberDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final KakaoMemberDetailsService kakaoMemberDetailsService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -27,6 +29,7 @@ public class SecurityConfig {
                 .oauth2Login(oAuth2Login -> {
                     oAuth2Login.userInfoEndpoint(userInfoEndpointConfig ->
                     userInfoEndpointConfig.userService(kakaoMemberDetailsService));
+                    oAuth2Login.successHandler(oAuth2SuccessHandler)
                 });
 
 
