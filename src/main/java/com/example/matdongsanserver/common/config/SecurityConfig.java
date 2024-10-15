@@ -1,6 +1,8 @@
 package com.example.matdongsanserver.common.config;
 
 import com.example.matdongsanserver.domain.auth.filter.JwtFilter;
+import com.example.matdongsanserver.domain.auth.handler.JwtAccessDeniedHandler;
+import com.example.matdongsanserver.domain.auth.handler.JwtAuthenticationFailEntryPoint;
 import com.example.matdongsanserver.domain.auth.handler.OAuth2SuccessHandler;
 import com.example.matdongsanserver.domain.auth.service.KakaoMemberDetailsService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,8 @@ public class SecurityConfig {
     private final KakaoMemberDetailsService kakaoMemberDetailsService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final JwtFilter customJwtFilter;
+    private final JwtAuthenticationFailEntryPoint jwtAuthenticationFailEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
@@ -50,7 +54,21 @@ public class SecurityConfig {
                     oAuth2Login.successHandler(oAuth2SuccessHandler);
                 });
         http
+                .authorizeHttpRequests((authz) -> authz
+                        .requestMatchers("/").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/login/oauth2/code/kakao").permitAll() // for Postman - redirect_uri
+                        .requestMatchers("/api/exception/**").permitAll()
+                        .requestMatchers("/favicon.ico").permitAll()
+                        .anyRequest().authenticated()
+                );
+        http
                 .addFilterBefore(customJwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http
+                .exceptionHandling(exceptionHandling -> {
+                    exceptionHandling.authenticationEntryPoint(jwtAuthenticationFailEntryPoint);
+                    exceptionHandling.accessDeniedHandler(jwtAccessDeniedHandler);
+                });
 
 
         return http.build();
