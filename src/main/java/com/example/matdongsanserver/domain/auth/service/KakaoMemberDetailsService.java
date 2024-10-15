@@ -1,5 +1,7 @@
-package com.example.matdongsanserver.common.auth.kakao;
+package com.example.matdongsanserver.domain.auth.service;
 
+import com.example.matdongsanserver.domain.auth.dto.KakaoMemberDetails;
+import com.example.matdongsanserver.domain.auth.util.KakaoUserInfo;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;

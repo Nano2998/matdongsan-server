@@ -1,4 +1,4 @@
-package com.example.matdongsanserver.common.auth.kakao;
+package com.example.matdongsanserver.domain.auth.dto;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;

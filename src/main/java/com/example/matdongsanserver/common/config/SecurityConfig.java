@@ -1,6 +1,6 @@
 package com.example.matdongsanserver.common.config;
 
-import com.example.matdongsanserver.common.auth.kakao.KakaoMemberDetailsService;
+import com.example.matdongsanserver.domain.auth.service.KakaoMemberDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

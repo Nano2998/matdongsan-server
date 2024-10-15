@@ -1,4 +1,4 @@
-package com.example.matdongsanserver.common.auth.kakao;
+package com.example.matdongsanserver.domain.auth.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
