@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.domain.auth.filter;
 
+import com.example.matdongsanserver.domain.auth.dto.TokenDto;
 import com.example.matdongsanserver.domain.auth.jwt.TokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
@@ -20,6 +22,7 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
 
     private static final String ACCESS_HEADER = "AccessToken";
+    private static final String REFRESH_HEADER = "RefreshToken";
 
     private final TokenProvider tokenProvider;
 
@@ -32,19 +35,18 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String accessToken = getTokenFromHeader(request);
-
-        /*
-        if (!tokenProvider.validateExpire(accessToken) && tokenProvider.validateToken(accessToken)) {
-            String redirectUrl =
-                    "http://" + request.getServerName() + "/api/exception/access-token-expired";
-            response.sendRedirect(redirectUrl);
-            return;
-        }
-         */
+        String accessToken = getTokenFromHeader(request, ACCESS_HEADER);
 
         if (tokenProvider.validateExpire(accessToken) && tokenProvider.validateToken(accessToken)) {
-            SecurityContextHolder.getContext().setAuthentication(tokenProvider.getAuthentication(accessToken));
+            String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
+            if (tokenProvider.validateExpire(refreshToken) && tokenProvider.validateToken(refreshToken)) {
+                // accessToken, refreshToken 재발급
+                TokenDto tokenDto = tokenProvider.reIssueAccessToken(refreshToken);
+                SecurityContextHolder.getContext()
+                        .setAuthentication(tokenProvider.getAuthentication(tokenDto.getAccessToken()));
+
+                redirectReissueURI(request, response, tokenDto);
+            }
         }
 
         filterChain.doFilter(request, response);
@@ -70,11 +72,19 @@ public class JwtFilter extends OncePerRequestFilter {
         return false;
     }
 
-    private String getTokenFromHeader(HttpServletRequest request) {
-        String token = request.getHeader(JwtFilter.ACCESS_HEADER);
+    private String getTokenFromHeader(HttpServletRequest request, String header) {
+        String token = request.getHeader(header);
         if (StringUtils.hasText(token)) {
             return token;
         }
         return null;
+    }
+
+    private static void redirectReissueURI(HttpServletRequest request, HttpServletResponse response, TokenDto tokenDto)
+            throws IOException {
+        HttpSession session = request.getSession();
+        session.setAttribute("accessToken", tokenDto.getAccessToken());
+        session.setAttribute("refreshToken", tokenDto.getRefreshToken());
+        response.sendRedirect("/api/sign/reissue");
     }
 }

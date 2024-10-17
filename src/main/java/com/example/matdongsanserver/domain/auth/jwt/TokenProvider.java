@@ -1,6 +1,9 @@
 package com.example.matdongsanserver.domain.auth.jwt;
 
 import com.example.matdongsanserver.domain.auth.dto.KakaoMemberDetails;
+import com.example.matdongsanserver.domain.auth.dto.TokenDto;
+import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshToken;
+import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -11,6 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.security.Key;
 import java.util.Arrays;
@@ -28,15 +33,18 @@ public class TokenProvider {
     private final String secretKey;
     private final long accessTokenValidityTime;
     private final long refreshTokenValidityTime;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     private Key secretkey;
 
     public TokenProvider(@Value("${jwt.secret_key}") String secretKey,
                          @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityTime,
-                         @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityTime) {
+                         @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityTime,
+                         RefreshTokenRepository refreshTokenRepository) {
         this.secretKey = secretKey;
         this.accessTokenValidityTime = accessTokenValidityTime * 1000;
         this.refreshTokenValidityTime = refreshTokenValidityTime * 1000;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @PostConstruct
@@ -45,8 +53,8 @@ public class TokenProvider {
         this.secretkey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /*
-    access, refresh Token 생성
+    /**
+     * access, refresh Token 생성
      */
     public TokenDto createToken(String email, String role) {
         long now = (new Date()).getTime();
@@ -71,8 +79,8 @@ public class TokenProvider {
         return TokenDto.of(accessToken, refreshToken);
     }
 
-    /*
-    토큰의 유효성 검사
+    /**
+     * 토큰의 유효성 검사
      */
     public boolean validateToken(String token) {
         try {
@@ -90,10 +98,13 @@ public class TokenProvider {
         }
     }
 
-    /*
-    토큰이 만료되었는지 검사
+    /**
+     * 토큰이 만료되었는지 검사
      */
     public boolean validateExpire(String token) {
+        if (!StringUtils.hasText(token)) {
+            return false;
+        }
         try {
             Jwts.parserBuilder()
                     .setSigningKey(secretKey)
@@ -105,8 +116,8 @@ public class TokenProvider {
         }
     }
 
-    /*
-     토큰으로부터 Authentication 객체를 생성
+    /**
+     * 토큰으로부터 Authentication 객체를 생성
      */
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder()
@@ -128,5 +139,22 @@ public class TokenProvider {
                 simpleGrantedAuthorities, Map.of());
 
         return new UsernamePasswordAuthenticationToken(principal, token, simpleGrantedAuthorities);
+    }
+
+    /**
+     * 토큰 재발급
+     */
+    @Transactional
+    public TokenDto reIssueAccessToken(String refreshToken) {
+        RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken);
+
+        TokenDto tokenDto = createToken(findToken.getId(), findToken.getAuthority());
+        refreshTokenRepository.save(RefreshToken.builder()
+                .id(findToken.getId())
+                .authorities(findToken.getAuthorities())
+                .refreshToken(tokenDto.getRefreshToken())
+                .build());
+
+        return tokenDto;
     }
 }

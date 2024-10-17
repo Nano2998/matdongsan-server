@@ -29,8 +29,13 @@ dependencies {
     //implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     //implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+<<<<<<< HEAD
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.0'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+=======
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    runtimeOnly 'com.h2database:h2'
+>>>>>>> 0ed7ad9 (feat: Redis 도입 및 리프레시 토큰 구현)
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'

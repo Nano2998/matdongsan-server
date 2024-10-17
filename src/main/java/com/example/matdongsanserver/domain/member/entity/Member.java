@@ -28,6 +28,7 @@ public class Member extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+<<<<<<< HEAD
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Child> children =  new ArrayList<>();
 
@@ -36,13 +37,21 @@ public class Member extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "following", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Follow> followerList = new ArrayList<>();   // 나를 팔로우하는 사람들
+=======
+    private Boolean isFirstLogin;
+>>>>>>> 0ed7ad9 (feat: Redis 도입 및 리프레시 토큰 구현)
 
     @Builder
-    public Member(String email, String profileImage, String nickname, Role role) {
+    public Member(String email, String profileImage, String nickname, Role role, Boolean isFirstLogin) {
         this.email = email;
         this.profileImage = profileImage;
         this.nickname = nickname;
         this.role = role;
+        this.isFirstLogin = isFirstLogin;
+    }
+
+    public boolean isFirstLogin() {
+        return isFirstLogin;
     }
 
     public void addChild(Child child) {

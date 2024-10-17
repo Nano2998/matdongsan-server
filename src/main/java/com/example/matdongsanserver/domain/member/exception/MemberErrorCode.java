@@ -8,11 +8,15 @@ import org.springframework.http.HttpStatus;
 @Getter
 @RequiredArgsConstructor
 public enum MemberErrorCode implements ErrorCode {
+<<<<<<< HEAD
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
     CHILD_NOT_FOUND(HttpStatus.NOT_FOUND, "자녀를 찾을 수 없습니다."),
     FOLLOW_ALREADY_EXISTS(HttpStatus.NOT_FOUND, "이미 팔로우하였습니다."),
     FOLLOW_NOT_EXISTS(HttpStatus.NOT_FOUND, "팔로우가 존재하지 않습니다.")
     ;
+=======
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");
+>>>>>>> 0ed7ad9 (feat: Redis 도입 및 리프레시 토큰 구현)
 
     private final HttpStatus httpStatus;
     private final String message;
