@@ -1,6 +1,6 @@
 package com.example.matdongsanserver.domain.auth.controller;
 
-import com.example.matdongsanserver.domain.auth.dto.TokenDto;
+import com.example.matdongsanserver.domain.auth.jwt.TokenDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

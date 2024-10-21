@@ -19,4 +19,9 @@ public class AuthExceptionController {
     public void authenticateException() {
         throw new AuthException(AuthErrorCode.LOGIN_REQUIRED);
     }
+
+    @GetMapping("/refresh-token-expired")
+    public void refreshTokenExpiredException() {
+        throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+    }
 }

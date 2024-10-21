@@ -4,7 +4,7 @@ import com.example.matdongsanserver.domain.auth.filter.JwtFilter;
 import com.example.matdongsanserver.domain.auth.handler.JwtAccessDeniedHandler;
 import com.example.matdongsanserver.domain.auth.handler.JwtAuthenticationFailEntryPoint;
 import com.example.matdongsanserver.domain.auth.handler.OAuth2SuccessHandler;
-import com.example.matdongsanserver.domain.auth.service.KakaoMemberDetailsService;
+import com.example.matdongsanserver.domain.auth.kakao.KakaoMemberDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -59,7 +59,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/login/oauth2/code/kakao").permitAll() // for Postman - redirect_uri
                         .requestMatchers("/api/exception/**").permitAll()
-                        .requestMatchers("/api/sign/login/kakao/**").permitAll()
+                        .requestMatchers("/api/sign/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
                         .anyRequest().authenticated()
                 );

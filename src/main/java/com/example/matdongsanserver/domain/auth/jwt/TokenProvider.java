@@ -1,12 +1,12 @@
 package com.example.matdongsanserver.domain.auth.jwt;
 
-import com.example.matdongsanserver.domain.auth.dto.KakaoMemberDetails;
-import com.example.matdongsanserver.domain.auth.dto.TokenDto;
+import com.example.matdongsanserver.domain.auth.kakao.KakaoMemberDetails;
 import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshToken;
 import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SecurityException;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -83,17 +83,16 @@ public class TokenProvider {
      * 토큰의 유효성 검사
      */
     public boolean validateToken(String token) {
+        if (!StringUtils.hasText(token)) {
+            return false;
+        }
         try {
             Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
-            return false;
-        } catch (UnsupportedJwtException e) {
-            return false;
-        } catch (IllegalArgumentException e) {
+        } catch (SecurityException | MalformedJwtException | IllegalArgumentException | UnsupportedJwtException e) {
             return false;
         }
     }

@@ -1,10 +1,10 @@
 package com.example.matdongsanserver.domain.auth.handler;
 
-import com.example.matdongsanserver.domain.auth.dto.TokenDto;
+import com.example.matdongsanserver.domain.auth.jwt.TokenDto;
 import com.example.matdongsanserver.domain.auth.jwt.TokenProvider;
 import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshToken;
 import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshTokenRepository;
-import com.example.matdongsanserver.domain.auth.util.KakaoUserInfo;
+import com.example.matdongsanserver.domain.auth.kakao.KakaoUserInfo;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;

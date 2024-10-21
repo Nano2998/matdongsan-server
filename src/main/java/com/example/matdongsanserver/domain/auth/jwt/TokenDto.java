@@ -1,4 +1,4 @@
-package com.example.matdongsanserver.domain.auth.dto;
+package com.example.matdongsanserver.domain.auth.jwt;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

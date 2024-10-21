@@ -1,6 +1,6 @@
 package com.example.matdongsanserver.domain.auth.filter;
 
-import com.example.matdongsanserver.domain.auth.dto.TokenDto;
+import com.example.matdongsanserver.domain.auth.jwt.TokenDto;
 import com.example.matdongsanserver.domain.auth.jwt.TokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,6 +23,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private static final String ACCESS_HEADER = "AccessToken";
     private static final String REFRESH_HEADER = "RefreshToken";
+    private static final String EXCEPTION_ACCESS_HANDLER = "/api/exception/refresh-token-expired";
 
     private final TokenProvider tokenProvider;
 
@@ -37,15 +38,25 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String accessToken = getTokenFromHeader(request, ACCESS_HEADER);
 
-        if (tokenProvider.validateExpire(accessToken) && tokenProvider.validateToken(accessToken)) {
-            String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
-            if (tokenProvider.validateExpire(refreshToken) && tokenProvider.validateToken(refreshToken)) {
-                // accessToken, refreshToken 재발급
-                TokenDto tokenDto = tokenProvider.reIssueAccessToken(refreshToken);
+        if (StringUtils.hasText(accessToken) && tokenProvider.validateToken(accessToken)) {
+            if (tokenProvider.validateExpire(accessToken)) {
                 SecurityContextHolder.getContext()
-                        .setAuthentication(tokenProvider.getAuthentication(tokenDto.getAccessToken()));
+                        .setAuthentication(tokenProvider.getAuthentication(accessToken));
+            } else {
+                String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
+                if (StringUtils.hasText(refreshToken) && tokenProvider.validateToken(refreshToken)) {
+                    if (tokenProvider.validateExpire(refreshToken)) {
+                        TokenDto tokenDto = tokenProvider.reIssueAccessToken(refreshToken);
+                        SecurityContextHolder.getContext()
+                                .setAuthentication(tokenProvider.getAuthentication(tokenDto.getAccessToken()));
 
-                redirectReissueURI(request, response, tokenDto);
+                        redirectReissueURI(request, response, tokenDto);
+                        return;
+                    } else {
+                        //리프레시 토큰 만료
+                        response.sendRedirect(EXCEPTION_ACCESS_HANDLER);
+                    }
+                }
             }
         }
 
@@ -53,28 +64,16 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     private static boolean isRequestPassURI(HttpServletRequest request) {
-        if (request.getRequestURI().equals("/")) {
-            return true;
-        }
-
-        if (request.getRequestURI().startsWith("/api/auth")) {
-            return true;
-        }
-
-        if (request.getRequestURI().startsWith("/api/exception")) {
-            return true;
-        }
-
-        if (request.getRequestURI().startsWith("/favicon.ico")) {
-            return true;
-        }
-
-        return false;
+        return request.getRequestURI().equals("/") ||
+                request.getRequestURI().startsWith("/api/auth") ||
+                request.getRequestURI().startsWith("/api/exception") ||
+                request.getRequestURI().startsWith("/favicon.ico");
     }
 
     private String getTokenFromHeader(HttpServletRequest request, String header) {
         String token = request.getHeader(header);
         if (StringUtils.hasText(token)) {
+            log.info("{}", token);
             return token;
         }
         return null;
