@@ -1,9 +1,12 @@
 package com.example.matdongsanserver.domain.story.service;
 
 import com.example.matdongsanserver.common.config.ChatGptConfig;
+import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.story.dto.request.StoryRequestDto;
 import com.example.matdongsanserver.domain.story.dto.response.ChatGptResponseDto;
 import com.example.matdongsanserver.domain.story.dto.response.StoryResponseDto;
+import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
+import com.example.matdongsanserver.domain.story.exception.StoryException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,8 @@ public class StoryService {
     @Value("${openai.api.url}")
     private String apiUrl;
 
+    private final PromptsConfig promptsConfig;
+
     private final ChatGptConfig chatGptConfig;
 
     /**
@@ -49,21 +54,13 @@ public class StoryService {
      */
     private String getPromptForAge(int age, String language, String theme) {
         if (language.equals("en")) {
-            return switch (age) {
-                case 3 ->
-                        "Discard all plausibility and write a story in English about " + theme + " that a 3-year-old would enjoy, using fewer than 130 words.";
-                case 4 ->
-                        "Discard all plausibility and write a story in English about " + theme + " that a 4-year-old would enjoy, using fewer than 130 words.";
-                case 5 ->
-                        "Write an imaginative and engaging story in English about " + theme + " that a 5-year-old would enjoy, using fewer than 200 words.";
-                case 6 ->
-                        "Write an imaginative and engaging story in English about " + theme + " that a 6-year-old would enjoy, using fewer than 300 words.";
-                case 7 -> "Write a story about " + theme + " for a seven-year-old in under 450 words.";
-                case 8 -> "Write a story about " + theme + " for an eight-year-old in under 500 words.";
-                default -> throw new IllegalArgumentException("Invalid age for generating a story.");
-            };
+            String template = promptsConfig.getEn().get(age);
+            if (template != null) {
+                return String.format(template, theme);
+            }
+            throw new StoryException(StoryErrorCode.INVALID_AGE);
         }
-        throw new IllegalArgumentException("Invalid language.");
+        throw new StoryException(StoryErrorCode.INVALID_LANGUAGE);
     }
 
     /**
@@ -75,7 +72,7 @@ public class StoryService {
             case 5, 6 -> 400;
             case 7 -> 700;
             case 8 -> 750;
-            default -> throw new IllegalArgumentException("Invalid age for token limit.");
+            default -> throw new StoryException(StoryErrorCode.INVALID_AGE);
         };
     }
 
@@ -109,7 +106,7 @@ public class StoryService {
             ChatGptResponseDto chatGptResponseDto = objectMapper.readValue(response.getBody(), new TypeReference<ChatGptResponseDto>(){});
             return chatGptResponseDto.getChoices().get(0).getMessage().getContent();
         } else {
-            return "Failed to generate story.";
+            throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
         }
     }
 }
