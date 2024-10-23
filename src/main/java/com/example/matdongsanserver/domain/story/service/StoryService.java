@@ -2,11 +2,14 @@ package com.example.matdongsanserver.domain.story.service;
 
 import com.example.matdongsanserver.common.config.ChatGptConfig;
 import com.example.matdongsanserver.common.config.PromptsConfig;
-import com.example.matdongsanserver.domain.story.dto.request.StoryRequestDto;
-import com.example.matdongsanserver.domain.story.dto.response.ChatGptResponseDto;
-import com.example.matdongsanserver.domain.story.dto.response.StoryResponseDto;
+import com.example.matdongsanserver.domain.story.document.Language;
+import com.example.matdongsanserver.domain.story.document.Story;
+import com.example.matdongsanserver.domain.story.dto.request.StoryCreationRequest;
+import com.example.matdongsanserver.domain.story.dto.response.ChatGptResponse;
+import com.example.matdongsanserver.domain.story.dto.response.StoryCreationResponse;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
+import com.example.matdongsanserver.domain.story.repository.StoryRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -37,30 +40,43 @@ public class StoryService {
 
     private final ChatGptConfig chatGptConfig;
 
+    private final StoryRepository storyRepository;
+
     /**
      * 동화 생성
      */
-    public StoryResponseDto generateStory(StoryRequestDto requestDto) throws IOException {
+    public StoryCreationResponse generateStory(StoryCreationRequest requestDto) throws IOException {
         String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getTheme());
         int maxTokens = getMaxTokensForAge(requestDto.getAge());
 
-        return StoryResponseDto.builder()
-                .story(sendOpenAiRequest(prompt, maxTokens))
+        return StoryCreationResponse.builder()
+                .story(storyRepository.save(Story.builder()
+                        .age(requestDto.getAge())
+                        .language(requestDto.getLanguage())
+                        .theme(requestDto.getTheme())
+                        .title("제목 미정") //제목 로직 추후 수정 필요
+                        .content(sendOpenAiRequest(prompt, maxTokens))
+                        .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
+                        .isPublic(false)
+                        .build()))
                 .build();
     }
 
     /**
      * 입력 받은 테마와 나이, 언어를 통해 프롬프트 제공
      */
-    private String getPromptForAge(int age, String language, String theme) {
-        if (language.equals("en")) {
+    private String getPromptForAge(int age, Language language, String theme) {
+        if (language == Language.EN) {
             String template = promptsConfig.getEn().get(age);
             if (template != null) {
                 return String.format(template, theme);
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
+        } else if (language == Language.KO) {
+            throw new StoryException(StoryErrorCode.INVALID_LANGUAGE); //한국어 추후 처리 필요
+        } else {
+            throw new StoryException(StoryErrorCode.INVALID_LANGUAGE);
         }
-        throw new StoryException(StoryErrorCode.INVALID_LANGUAGE);
     }
 
     /**
@@ -103,8 +119,8 @@ public class StoryService {
         ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
-            ChatGptResponseDto chatGptResponseDto = objectMapper.readValue(response.getBody(), new TypeReference<ChatGptResponseDto>(){});
-            return chatGptResponseDto.getChoices().get(0).getMessage().getContent();
+            ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<ChatGptResponse>(){});
+            return chatGptResponse.getChoices().get(0).getMessage().getContent();
         } else {
             throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
         }

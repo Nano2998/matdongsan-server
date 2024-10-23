@@ -1,7 +1,7 @@
 package com.example.matdongsanserver.domain.story.controller;
 
-import com.example.matdongsanserver.domain.story.dto.request.StoryRequestDto;
-import com.example.matdongsanserver.domain.story.dto.response.StoryResponseDto;
+import com.example.matdongsanserver.domain.story.dto.request.StoryCreationRequest;
+import com.example.matdongsanserver.domain.story.dto.response.StoryCreationResponse;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,8 +18,8 @@ public class StoryController {
 
     private final StoryService storyService;
 
-    @PostMapping("/generate")
-    public StoryResponseDto generateStory(@RequestBody StoryRequestDto requestDto) throws IOException {
+    @PostMapping("")
+    public StoryCreationResponse generateStory(@RequestBody StoryCreationRequest requestDto) throws IOException {
         return storyService.generateStory(requestDto);
     }
 }
