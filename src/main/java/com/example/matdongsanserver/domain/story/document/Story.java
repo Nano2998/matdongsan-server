@@ -1,6 +1,6 @@
 package com.example.matdongsanserver.domain.story.document;
 
-import com.example.matdongsanserver.domain.story.dto.request.StoryUpdateRequest;
+import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -59,7 +59,7 @@ public class Story {
         this.tags = new ArrayList<>();
     }
 
-    public Story updateStoryDetail(StoryUpdateRequest storyUpdateRequest) {
+    public Story updateStoryDetail(StoryDto.StoryUpdateRequest storyUpdateRequest) {
         this.title = storyUpdateRequest.getTitle();
         this.isPublic = storyUpdateRequest.getIsPublic();
         this.tags = storyUpdateRequest.getTags();

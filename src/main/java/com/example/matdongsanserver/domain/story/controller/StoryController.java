@@ -1,8 +1,6 @@
 package com.example.matdongsanserver.domain.story.controller;
 
-import com.example.matdongsanserver.domain.story.dto.request.StoryCreationRequest;
-import com.example.matdongsanserver.domain.story.dto.request.StoryUpdateRequest;
-import com.example.matdongsanserver.domain.story.dto.response.StoryCreationResponse;
+import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,13 +16,13 @@ public class StoryController {
     private final StoryService storyService;
 
     @PostMapping
-    public ResponseEntity<StoryCreationResponse> generateStory(@RequestBody StoryCreationRequest requestDto) throws IOException {
+    public ResponseEntity<StoryDto.StoryCreationResponse> generateStory(@RequestBody StoryDto.StoryCreationRequest requestDto) throws IOException {
         return ResponseEntity.ok()
                 .body(storyService.generateStory(requestDto));
     }
 
     @PatchMapping("/{storyId}")
-    public ResponseEntity<Void> updateStoryDetail(@PathVariable String storyId, @RequestBody StoryUpdateRequest requestDto) {
+    public ResponseEntity<Void> updateStoryDetail(@PathVariable String storyId, @RequestBody StoryDto.StoryUpdateRequest requestDto) {
         storyService.updateStoryDetail(storyId, requestDto);
         return ResponseEntity.ok().build();
     }

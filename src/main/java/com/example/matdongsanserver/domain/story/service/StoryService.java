@@ -4,10 +4,7 @@ import com.example.matdongsanserver.common.config.ChatGptConfig;
 import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.story.document.Language;
 import com.example.matdongsanserver.domain.story.document.Story;
-import com.example.matdongsanserver.domain.story.dto.request.StoryCreationRequest;
-import com.example.matdongsanserver.domain.story.dto.request.StoryUpdateRequest;
-import com.example.matdongsanserver.domain.story.dto.response.ChatGptResponse;
-import com.example.matdongsanserver.domain.story.dto.response.StoryCreationResponse;
+import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
 import com.example.matdongsanserver.domain.story.repository.StoryRepository;
@@ -48,11 +45,11 @@ public class StoryService {
      * 동화 생성
      */
     @Transactional
-    public StoryCreationResponse generateStory(StoryCreationRequest requestDto) throws IOException {
+    public StoryDto.StoryCreationResponse generateStory(StoryDto.StoryCreationRequest requestDto) throws IOException {
         String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getTheme());
         int maxTokens = getMaxTokensForAge(requestDto.getAge());
 
-        return StoryCreationResponse.builder()
+        return StoryDto.StoryCreationResponse.builder()
                 .story(storyRepository.save(Story.builder()
                         .age(requestDto.getAge())
                         .language(requestDto.getLanguage())
@@ -68,7 +65,7 @@ public class StoryService {
      * 동화 상세 수정
      */
     @Transactional
-    public void updateStoryDetail(String id, StoryUpdateRequest requestDto) {
+    public void updateStoryDetail(String id, StoryDto.StoryUpdateRequest requestDto) {
         Story story = storyRepository.findById(id)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND))
                 .updateStoryDetail(requestDto);
@@ -133,7 +130,7 @@ public class StoryService {
         ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
-            ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<ChatGptResponse>(){});
+            StoryDto.ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<StoryDto.ChatGptResponse>(){});
             return chatGptResponse.getChoices().get(0).getMessage().getContent();
         } else {
             throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
