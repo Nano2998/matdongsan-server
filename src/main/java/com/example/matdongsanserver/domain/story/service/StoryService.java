@@ -5,6 +5,7 @@ import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.story.document.Language;
 import com.example.matdongsanserver.domain.story.document.Story;
 import com.example.matdongsanserver.domain.story.dto.request.StoryCreationRequest;
+import com.example.matdongsanserver.domain.story.dto.request.StoryUpdateRequest;
 import com.example.matdongsanserver.domain.story.dto.response.ChatGptResponse;
 import com.example.matdongsanserver.domain.story.dto.response.StoryCreationResponse;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
@@ -20,6 +21,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -45,6 +47,7 @@ public class StoryService {
     /**
      * 동화 생성
      */
+    @Transactional
     public StoryCreationResponse generateStory(StoryCreationRequest requestDto) throws IOException {
         String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getTheme());
         int maxTokens = getMaxTokensForAge(requestDto.getAge());
@@ -57,9 +60,20 @@ public class StoryService {
                         .title("제목 미정") //제목 로직 추후 수정 필요
                         .content(sendOpenAiRequest(prompt, maxTokens))
                         .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
-                        .isPublic(false)
                         .build()))
                 .build();
+    }
+
+    /**
+     * 동화 상세 수정
+     */
+    @Transactional
+    public void updateStoryDetail(String id, StoryUpdateRequest requestDto) {
+        Story story = storyRepository.findById(id)
+                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND))
+                .updateStoryDetail(requestDto);
+
+        storyRepository.save(story);
     }
 
     /**

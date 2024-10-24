@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.domain.story.document;
 
+import com.example.matdongsanserver.domain.story.dto.request.StoryUpdateRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -10,6 +11,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Document(collection = "story")
@@ -35,6 +38,8 @@ public class Story {
 
     private Boolean isPublic; //동화가 공개되었는지
 
+    private List<String> tags; // 해시태그 리스트 추가
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -42,7 +47,7 @@ public class Story {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Story(int age, Language language, String theme, String title, String content, String coverUrl, Boolean isPublic) {
+    public Story(int age, Language language, String theme, String title, String content, String coverUrl) {
         this.age = age;
         this.language = language;
         this.theme = theme;
@@ -50,6 +55,14 @@ public class Story {
         this.content = content;
         this.views = 0L;
         this.coverUrl = coverUrl;
-        this.isPublic = isPublic;
+        this.isPublic = false;
+        this.tags = new ArrayList<>();
+    }
+
+    public Story updateStoryDetail(StoryUpdateRequest storyUpdateRequest) {
+        this.title = storyUpdateRequest.getTitle();
+        this.isPublic = storyUpdateRequest.getIsPublic();
+        this.tags = storyUpdateRequest.getTags();
+        return this;
     }
 }
