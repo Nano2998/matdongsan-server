@@ -115,7 +115,7 @@ public class StoryService {
     }
 
     /**
-     * 나이별 최대 토큰 설정
+     * 나이별 최대 토큰 설정 (전체 글 길이 조절)
      */
     private int getMaxTokensForAge(int age) {
         return switch (age) {
@@ -133,7 +133,6 @@ public class StoryService {
     private String sendOpenAiRequest(String prompt, int maxTokens) throws IOException {
         HttpHeaders headers = chatGptConfig.httpHeaders();
 
-        // 요청 본문 생성
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", model);
         requestBody.put("max_tokens", maxTokens);
@@ -143,14 +142,11 @@ public class StoryService {
                 Map.of("role", "user", "content", prompt)
         });
 
-        // 요청 본문을 JSON으로 변환
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonBody = objectMapper.writeValueAsString(requestBody);
 
-        // 요청 엔티티 생성
         HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
-        // API 요청 보내기
         ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
