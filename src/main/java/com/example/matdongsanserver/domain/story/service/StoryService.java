@@ -67,12 +67,14 @@ public class StoryService {
      * 동화 상세 수정
      */
     @Transactional
-    public void updateStoryDetail(String id, StoryDto.StoryUpdateRequest requestDto) {
+    public StoryDto.StoryDetail updateStoryDetail(String id, StoryDto.StoryUpdateRequest requestDto) {
         Story story = storyRepository.findById(id)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND))
                 .updateStoryDetail(requestDto);
 
-        storyRepository.save(story);
+        return StoryDto.StoryDetail.builder()
+                .story(storyRepository.save(story))
+                .build();
     }
 
     /**
