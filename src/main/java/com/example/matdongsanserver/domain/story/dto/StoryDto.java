@@ -82,4 +82,22 @@ public class StoryDto {
             this.content = story.getContent();
         }
     }
+
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class StorySummary {
+        private String id;
+        private String title;
+        private String content;
+        private String coverUrl;
+
+        @Builder
+        public StorySummary(Story story) {
+            this.id = story.getId();
+            this.title = story.getTitle();
+            this.content = story.getContent();
+            this.coverUrl = story.getCoverUrl();
+        }
+    }
 }

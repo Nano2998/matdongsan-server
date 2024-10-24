@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +20,12 @@ public class StoryController {
     public ResponseEntity<StoryDto.StoryCreationResponse> generateStory(@RequestBody StoryDto.StoryCreationRequest requestDto) throws IOException {
         return ResponseEntity.ok()
                 .body(storyService.generateStory(requestDto));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<StoryDto.StorySummary>> getAllStories() {
+        return ResponseEntity.ok()
+                .body(storyService.getAllStories());
     }
 
     @PatchMapping("/{storyId}")

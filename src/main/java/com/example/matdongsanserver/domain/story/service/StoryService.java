@@ -22,11 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StoryService {
 
     @Value("${openai.model}")
@@ -71,6 +73,16 @@ public class StoryService {
                 .updateStoryDetail(requestDto);
 
         storyRepository.save(story);
+    }
+
+    /**
+     * 전체 동화 리스트 제공
+     */
+    public List<StoryDto.StorySummary> getAllStories() {
+        return storyRepository.findAll()
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
     }
 
     /**
