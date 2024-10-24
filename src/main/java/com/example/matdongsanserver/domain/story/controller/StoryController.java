@@ -33,4 +33,10 @@ public class StoryController {
         storyService.updateStoryDetail(storyId, requestDto);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{storyId}")
+    public ResponseEntity<StoryDto.StoryDetail> getStoryDetail(@PathVariable String storyId) {
+        return ResponseEntity.ok()
+                .body(storyService.getStoryDetail(storyId));
+    }
 }

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class StoryDto {
@@ -89,15 +90,35 @@ public class StoryDto {
     public static class StorySummary {
         private String id;
         private String title;
-        private String content;
+        private Long views;
         private String coverUrl;
 
-        @Builder
         public StorySummary(Story story) {
             this.id = story.getId();
             this.title = story.getTitle();
-            this.content = story.getContent();
+            this.views = story.getViews();
             this.coverUrl = story.getCoverUrl();
+        }
+    }
+
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class StoryDetail extends StorySummary {
+        private String content;
+        private int age;
+        private Language language;
+        private List<String> tags;
+        private LocalDateTime createdAt;
+
+        @Builder
+        public StoryDetail(Story story) {
+            super(story);
+            this.content = story.getContent();
+            this.age = story.getAge();
+            this.language = story.getLanguage();
+            this.tags = story.getTags();
+            this.createdAt = story.getCreatedAt();
         }
     }
 }

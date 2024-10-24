@@ -76,13 +76,23 @@ public class StoryService {
     }
 
     /**
-     * 전체 동화 리스트 제공
+     * 전체 동화 리스트 조회
      */
     public List<StoryDto.StorySummary> getAllStories() {
         return storyRepository.findAll()
                 .stream()
                 .map(StoryDto.StorySummary::new)
                 .toList();
+    }
+
+    /**
+     * 동화 상세 조회
+     */
+    public StoryDto.StoryDetail getStoryDetail(String id) {
+        return StoryDto.StoryDetail.builder()
+                .story(storyRepository.findById(id)
+                        .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)))
+                .build();
     }
 
     /**
