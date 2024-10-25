@@ -166,7 +166,7 @@ public class StoryService {
 
         String[] parts = response.split("Title: ", 2);
         if (parts.length > 1) {
-            String[] titleAndContent = parts[1].split("\nContent: ", 2);
+            String[] titleAndContent = parts[1].split(", Content: ", 2);
 
             String title = titleAndContent[0].trim();
             String content = titleAndContent.length > 1 ? titleAndContent[1].trim() : "";
