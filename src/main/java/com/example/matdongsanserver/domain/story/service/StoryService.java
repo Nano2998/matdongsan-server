@@ -50,14 +50,15 @@ public class StoryService {
     public StoryDto.StoryCreationResponse generateStory(StoryDto.StoryCreationRequest requestDto) throws IOException {
         String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getGiven());
         int maxTokens = getMaxTokensForAge(requestDto.getAge());
+        Map<String, String> parseStory = parseStoryResponse(sendOpenAiRequest(prompt, maxTokens));
 
         return StoryDto.StoryCreationResponse.builder()
                 .story(storyRepository.save(Story.builder()
                         .age(requestDto.getAge())
                         .language(requestDto.getLanguage())
                         .given(requestDto.getGiven())
-                        .title("제목 미정") //제목 로직 추후 수정 필요
-                        .content(sendOpenAiRequest(prompt, maxTokens))
+                        .title(parseStory.get("title"))
+                        .content(parseStory.get("content"))
                         .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
                         .build()))
                 .build();
@@ -155,5 +156,25 @@ public class StoryService {
         } else {
             throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
         }
+    }
+
+    /**
+     * 동화 제목, 내용 파싱
+     */
+    private Map<String, String> parseStoryResponse(String response) {
+        Map<String, String> parsedStory = new HashMap<>();
+
+        String[] parts = response.split("Title: ", 2);
+        if (parts.length > 1) {
+            String[] titleAndContent = parts[1].split("\nContent: ", 2);
+
+            String title = titleAndContent[0].trim();
+            String content = titleAndContent.length > 1 ? titleAndContent[1].trim() : "";
+
+            parsedStory.put("title", title);
+            parsedStory.put("content", content);
+        }
+
+        return parsedStory;
     }
 }
