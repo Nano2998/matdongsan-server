@@ -28,7 +28,7 @@ public class Story {
 
     private Language language; //입력 언어
 
-    private String theme; //입력 상황
+    private String given; //입력 상황
 
     private String title; //제목
 
@@ -49,10 +49,10 @@ public class Story {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Story(int age, Language language, String theme, String title, String content, String coverUrl) {
+    public Story(int age, Language language, String given, String title, String content, String coverUrl) {
         this.age = age;
         this.language = language;
-        this.theme = theme;
+        this.given = given;
         this.title = title;
         this.content = content;
         this.views = 0L;

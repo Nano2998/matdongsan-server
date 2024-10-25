@@ -18,15 +18,15 @@ public class StoryDto {
     public static class StoryCreationRequest {
         private Language language;
         private int age;
-        private String theme;
+        private String given;
 
         @JsonCreator
         public StoryCreationRequest(@JsonProperty("language") String language,
                                     @JsonProperty("age") int age,
-                                    @JsonProperty("theme") String theme) {
+                                    @JsonProperty("given") String given) {
             this.language = Language.valueOf(language.toUpperCase());
             this.age = age;
-            this.theme = theme;
+            this.given = given;
         }
     }
 

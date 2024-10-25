@@ -48,14 +48,14 @@ public class StoryService {
      */
     @Transactional
     public StoryDto.StoryCreationResponse generateStory(StoryDto.StoryCreationRequest requestDto) throws IOException {
-        String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getTheme());
+        String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getGiven());
         int maxTokens = getMaxTokensForAge(requestDto.getAge());
 
         return StoryDto.StoryCreationResponse.builder()
                 .story(storyRepository.save(Story.builder()
                         .age(requestDto.getAge())
                         .language(requestDto.getLanguage())
-                        .theme(requestDto.getTheme())
+                        .given(requestDto.getGiven())
                         .title("제목 미정") //제목 로직 추후 수정 필요
                         .content(sendOpenAiRequest(prompt, maxTokens))
                         .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
@@ -100,11 +100,11 @@ public class StoryService {
     /**
      * 입력 받은 테마와 나이, 언어를 통해 프롬프트 제공
      */
-    private String getPromptForAge(int age, Language language, String theme) {
+    private String getPromptForAge(int age, Language language, String given) {
         if (language == Language.EN) {
             String template = promptsConfig.getEn().get(age);
             if (template != null) {
-                return String.format(template, theme);
+                return String.format(template, given);
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
         } else if (language == Language.KO) {
