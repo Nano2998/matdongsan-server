@@ -13,4 +13,6 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "prompts")
 public class PromptsConfig {
     private Map<Integer, String> en;
+    private Map<Integer, String> ko;
+    private String storyElements;
 }

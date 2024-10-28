@@ -49,7 +49,12 @@ public class StoryService {
     @Transactional
     public StoryDto.StoryCreationResponse generateStory(StoryDto.StoryCreationRequest requestDto) throws IOException {
         String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getGiven());
-        int maxTokens = getMaxTokensForAge(requestDto.getAge());
+        int maxTokens = 0;
+        if (requestDto.getLanguage() == Language.EN) {
+            maxTokens = getMaxTokensForAgeEn(requestDto.getAge());
+        } else if (requestDto.getLanguage() == Language.KO) {
+            maxTokens = getMaxTokensForAgeKo(requestDto.getAge());
+        }
         Map<String, String> parseStory = parseStoryResponse(sendOpenAiRequest(prompt, maxTokens));
 
         return StoryDto.StoryCreationResponse.builder()
@@ -109,21 +114,38 @@ public class StoryService {
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
         } else if (language == Language.KO) {
-            throw new StoryException(StoryErrorCode.INVALID_LANGUAGE); //한국어 추후 처리 필요
+            String template = promptsConfig.getKo().get(age);
+            String storyElementsTemplate = promptsConfig.getStoryElements();
+            if (storyElementsTemplate != null && template != null) {
+                //String storyElements = storyElementsTemplate.replace("{given}", given).replace("{age}", String.valueOf(age));
+                //return template.replace("{story_elements}", storyElements);
+                return String.format(template, given);
+            }
+            throw new StoryException(StoryErrorCode.INVALID_AGE);
         } else {
             throw new StoryException(StoryErrorCode.INVALID_LANGUAGE);
         }
     }
 
     /**
-     * 나이별 최대 토큰 설정 (전체 글 길이 조절)
+     * 영어 나이별 최대 토큰 설정 (전체 글 길이 조절)
      */
-    private int getMaxTokensForAge(int age) {
+    private int getMaxTokensForAgeEn(int age) {
         return switch (age) {
             case 3, 4 -> 250;
             case 5, 6 -> 400;
             case 7 -> 700;
             case 8 -> 750;
+            default -> throw new StoryException(StoryErrorCode.INVALID_AGE);
+        };
+    }
+
+    /**
+     * 한글 나이별 최대 토큰 설정 (전체 글 길이 조절)
+     */
+    private int getMaxTokensForAgeKo(int age) {
+        return switch (age) {
+            case 3, 4, 5, 6, 7, 8 -> 1024;
             default -> throw new StoryException(StoryErrorCode.INVALID_AGE);
         };
     }
