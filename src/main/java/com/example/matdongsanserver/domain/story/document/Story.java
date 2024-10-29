@@ -34,6 +34,10 @@ public class Story {
 
     private String content; //내용
 
+    private String translationTitle; //영어 동화일 경우 번역본
+
+    private String translationContent; //영어 동화일 경우 번역본
+
     private Long views; //조회수
 
     private String coverUrl; //표지 이미지
@@ -59,6 +63,8 @@ public class Story {
         this.coverUrl = coverUrl;
         this.isPublic = false;
         this.tags = new ArrayList<>();
+        this.translationTitle = "";
+        this.translationContent = "";
     }
 
     public Story updateStoryDetail(StoryDto.StoryUpdateRequest storyUpdateRequest) {
@@ -66,5 +72,10 @@ public class Story {
         this.isPublic = storyUpdateRequest.getIsPublic();
         this.tags = storyUpdateRequest.getTags();
         return this;
+    }
+
+    public void updateTranslation(String translationTitle, String translationContent) {
+        this.translationTitle = translationTitle;
+        this.translationContent = translationContent;
     }
 }

@@ -52,4 +52,13 @@ public class StoryController {
         return ResponseEntity.ok()
                 .body(storyService.getStoryDetail(storyId));
     }
+
+    @Operation(summary = "영어 동화 번역")
+    @GetMapping("/translation/{storyId}")
+    public ResponseEntity<StoryDto.StoryTranslationResponse> translateStory(
+            @PathVariable String storyId
+    ) throws IOException {
+        return ResponseEntity.ok()
+                .body(storyService.translationStory(storyId));
+    }
 }

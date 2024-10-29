@@ -8,6 +8,7 @@ import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
 import com.example.matdongsanserver.domain.story.repository.StoryRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -70,6 +71,29 @@ public class StoryService {
     }
 
     /**
+     * 영어 동화 번역 - 번역이 이미 있다면 그대로 전달, 없다면 번역 요청 후 전달
+     */
+    @Transactional
+    public StoryDto.StoryTranslationResponse translationStory(String id) throws IOException {
+        Story story = storyRepository.findById(id)
+                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
+        if (story.getLanguage().equals(Language.KO)) {
+            throw new StoryException(StoryErrorCode.INVALID_LANGUAGE_FOR_TRANSLATION);
+        }
+        if (story.getTranslationTitle().isBlank()) {
+            Map<String, String> parseStory = parseStoryResponse(sendTranslationRequest(story.getTitle(), story.getContent()));
+            story.updateTranslation(parseStory.get("title"), parseStory.get("content"));
+            return StoryDto.StoryTranslationResponse.builder()
+                    .story(storyRepository.save(story))
+                    .build();
+        } else{
+            return StoryDto.StoryTranslationResponse.builder()
+                    .story(storyRepository.save(story))
+                    .build();
+        }
+    }
+
+    /**
      * 동화 상세 수정
      */
     @Transactional
@@ -119,7 +143,7 @@ public class StoryService {
             if (storyElementsTemplate != null && template != null) {
                 //String storyElements = storyElementsTemplate.replace("{given}", given).replace("{age}", String.valueOf(age));
                 //return template.replace("{story_elements}", storyElements);
-                return String.format(template, given);
+                return template.replace("{story_elements}", given);
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
         } else {
@@ -198,5 +222,33 @@ public class StoryService {
         }
 
         return parsedStory;
+    }
+
+    /**
+     * 영어 동화 번역 요청 전송
+     */
+    private String sendTranslationRequest(String title, String content) throws IOException {
+        HttpHeaders headers = chatGptConfig.httpHeaders();
+        String story = "Title: " + title + ", Content: " + content;
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", new Object[]{
+                Map.of("role", "system", "content", promptsConfig.getTranslation()),
+                Map.of("role", "user", "content", story)
+        });
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+
+        ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            StoryDto.ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<StoryDto.ChatGptResponse>(){});
+            return chatGptResponse.getChoices().get(0).getMessage().getContent();
+        } else {
+            throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
+        }
     }
 }
