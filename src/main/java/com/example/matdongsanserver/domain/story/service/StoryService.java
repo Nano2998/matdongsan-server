@@ -8,16 +8,14 @@ import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
 import com.example.matdongsanserver.domain.story.repository.StoryRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,10 +31,19 @@ import java.util.Map;
 public class StoryService {
 
     @Value("${openai.model}")
-    private String model;
+    private String aiModel;
 
     @Value("${openai.api.url}")
     private String apiUrl;
+
+    @Value("${openai.tts.model}")
+    private String ttsModel;
+
+    @Value("${openai.tts.voice}")
+    private String ttsVoice;
+
+    @Value("${openai.tts.url}")
+    private String ttsUrl;
 
     private final PromptsConfig promptsConfig;
 
@@ -128,6 +135,34 @@ public class StoryService {
     }
 
     /**
+     * tts 변환
+     */
+    public Resource getStoryTTS(String id) throws IOException {
+        Story story = storyRepository.findById(id)
+                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
+        HttpHeaders headers = chatGptConfig.httpHeaders();
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", ttsModel);
+        requestBody.put("voice", ttsVoice);
+        requestBody.put("input", story.getContent());
+        requestBody.put("speed", 0.95);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+
+        ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
+
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return new ByteArrayResource(response.getBody());
+        } else {
+            throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
+        }
+    }
+
+    /**
      * 입력 받은 테마와 나이, 언어를 통해 프롬프트 제공
      */
     private String getPromptForAge(int age, Language language, String given) {
@@ -181,7 +216,7 @@ public class StoryService {
         HttpHeaders headers = chatGptConfig.httpHeaders();
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", model);
+        requestBody.put("model", aiModel);
         requestBody.put("max_tokens", maxTokens);
         requestBody.put("temperature", 0.9);
         requestBody.put("messages", new Object[]{
@@ -232,7 +267,7 @@ public class StoryService {
         String story = "Title: " + title + ", Content: " + content;
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", model);
+        requestBody.put("model", aiModel);
         requestBody.put("messages", new Object[]{
                 Map.of("role", "system", "content", promptsConfig.getTranslation()),
                 Map.of("role", "user", "content", story)

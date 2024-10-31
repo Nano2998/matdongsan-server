@@ -1,4 +1,5 @@
 application.yml
+application-ai.yml
 application-prompt.yml
 HELP.md
 .gradle
