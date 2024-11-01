@@ -65,7 +65,7 @@ public class StoryController {
                 .body(storyService.translationStory(storyId));
     }
 
-    @Operation(summary = "영어 동화 TTS")
+    @Operation(summary = "동화 TTS")
     @GetMapping("/tts/{storyId}")
     public ResponseEntity<Resource> getStoryTTS(
             @PathVariable String storyId

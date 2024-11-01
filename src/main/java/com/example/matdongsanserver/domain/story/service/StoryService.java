@@ -140,6 +140,10 @@ public class StoryService {
     public Resource getStoryTTS(String id) throws IOException {
         Story story = storyRepository.findById(id)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
+        // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
+        if(story.getLanguage() == Language.KO){
+            throw new StoryException(StoryErrorCode.INVALID_LANGUAGE_FOR_TRANSLATION);
+        }
         HttpHeaders headers = chatGptConfig.httpHeaders();
 
         Map<String, Object> requestBody = new HashMap<>();

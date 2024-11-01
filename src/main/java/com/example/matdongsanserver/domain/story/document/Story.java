@@ -46,6 +46,8 @@ public class Story {
 
     private List<String> tags; // 해시태그 리스트 추가
 
+    private String ttsUrl;  //TTS 저장 주소
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -77,5 +79,9 @@ public class Story {
     public void updateTranslation(String translationTitle, String translationContent) {
         this.translationTitle = translationTitle;
         this.translationContent = translationContent;
+    }
+
+    public void updateTTSUrl(String ttsUrl) {
+        this.ttsUrl = ttsUrl;
     }
 }
