@@ -76,20 +76,25 @@ jobs:
           chmod 600 ec2_key.pem
 
       # 11. Deploy to EC2
-      - name: Deploy to EC2
+      - name: Deploy to EC2 through Bastion Host
         env:
           EC2_HOST: ${{ env.EC2_HOST }}
           EC2_USER: ${{ env.EC2_USER }}
+          BASTION_HOST: ${{ env.BASTION_HOST }}
+          BASTION_USER: ${{ env.BASTION_USER }}
           DOCKER_IMAGE: ${{ env.DOCKER_USERNAME }}/matdongsan-server:latest
         run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << EOF
-            # Stop and remove any existing container
-            docker stop matdongsan-server || true
-            docker rm matdongsan-server || true
+          # SSH to Bastion Host and from there to EC2
+          ssh -o StrictHostKeyChecking=no -i bastion_key.pem -A $BASTION_USER@$BASTION_HOST << EOF
+            ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'ENDSSH'
+              # Stop and remove any existing container
+              docker stop matdongsan-server || true
+              docker rm matdongsan-server || true
 
-            # Pull the latest Docker image
-            docker pull $DOCKER_IMAGE
+              # Pull the latest Docker image
+              docker pull $DOCKER_IMAGE
 
-            # Run the Docker container
-            docker run -d --name matdongsan-server -p 8080:8080 $DOCKER_IMAGE
+              # Run the Docker container
+              docker run -d --name matdongsan-server -p 8080:8080 $DOCKER_IMAGE
+            ENDSSH
           EOF
