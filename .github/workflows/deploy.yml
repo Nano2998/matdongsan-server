@@ -43,6 +43,7 @@ jobs:
       # 5. Create application.yaml file
       - name: Create application.yaml
         run: |
+          mkdir -p src/main/resources  # 필요한 디렉토리가 없으면 생성
           echo "${{ secrets.APPLICATION }}" > src/main/resources/application.yaml
 
       # 6. Build with Gradle
