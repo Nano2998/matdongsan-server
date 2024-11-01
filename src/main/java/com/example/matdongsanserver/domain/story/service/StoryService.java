@@ -1,5 +1,8 @@
 package com.example.matdongsanserver.domain.story.service;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.matdongsanserver.common.config.ChatGptConfig;
 import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.story.document.Language;
@@ -19,6 +22,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -45,11 +49,16 @@ public class StoryService {
     @Value("${openai.tts.url}")
     private String ttsUrl;
 
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucketName;
+
     private final PromptsConfig promptsConfig;
 
     private final ChatGptConfig chatGptConfig;
 
     private final StoryRepository storyRepository;
+
+    private final AmazonS3 amazonS3;
 
     /**
      * 동화 생성
@@ -137,13 +146,20 @@ public class StoryService {
     /**
      * tts 변환
      */
-    public Resource getStoryTTS(String id) throws IOException {
+    public String getStoryTTS(String id) throws IOException {
         Story story = storyRepository.findById(id)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
+
         // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
         if(story.getLanguage() == Language.KO){
             throw new StoryException(StoryErrorCode.INVALID_LANGUAGE_FOR_TRANSLATION);
         }
+
+        // 이미 ttsUrl이 저장되어 있다면 반환
+        if (!story.getTtsUrl().isBlank()){
+            return story.getTtsUrl();
+        }
+
         HttpHeaders headers = chatGptConfig.httpHeaders();
 
         Map<String, Object> requestBody = new HashMap<>();
@@ -160,7 +176,23 @@ public class StoryService {
         ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return new ByteArrayResource(response.getBody());
+            String fileName = id + ".mp3";
+
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(response.getBody());
+
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentType("audio/mpeg");
+            metadata.setContentLength(response.getBody().length);
+
+            // S3에 파일 업로드
+            amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
+            String ttsUrl = amazonS3.getUrl(bucketName, fileName).toString();
+
+            story.updateTTSUrl(ttsUrl);
+            storyRepository.save(story);
+
+            //return new ByteArrayResource(response.getBody());
+            return ttsUrl;
         } else {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }

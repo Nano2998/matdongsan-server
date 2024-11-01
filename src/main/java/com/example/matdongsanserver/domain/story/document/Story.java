@@ -67,6 +67,7 @@ public class Story {
         this.tags = new ArrayList<>();
         this.translationTitle = "";
         this.translationContent = "";
+        this.ttsUrl = "";
     }
 
     public Story updateStoryDetail(StoryDto.StoryUpdateRequest storyUpdateRequest) {

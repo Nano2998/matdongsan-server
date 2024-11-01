@@ -67,17 +67,18 @@ public class StoryController {
 
     @Operation(summary = "동화 TTS")
     @GetMapping("/tts/{storyId}")
-    public ResponseEntity<Resource> getStoryTTS(
+    public ResponseEntity<String> getStoryTTS(
             @PathVariable String storyId
     ) throws IOException {
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        responseHeaders.setContentDispositionFormData("attachment", "story_tts.mp3");
-        Resource resource = storyService.getStoryTTS(storyId);
-
+//        HttpHeaders responseHeaders = new HttpHeaders();
+//        responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+//        responseHeaders.setContentDispositionFormData("attachment", "story_tts.mp3");
+//        Resource resource = storyService.getStoryTTS(storyId);
+//        return ResponseEntity.ok()
+//                .headers(responseHeaders)
+//                .contentLength(resource.contentLength())
+//                .body(resource);
         return ResponseEntity.ok()
-                .headers(responseHeaders)
-                .contentLength(resource.contentLength())
-                .body(resource);
+                .body(storyService.getStoryTTS(storyId));
     }
 }
