@@ -102,5 +102,3 @@ jobs:
 
               # Run the Docker container
               docker run -d --name matdongsan-server -p 8080:8080 $DOCKER_IMAGE
-            ENDSSH
-          EOF
