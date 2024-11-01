@@ -27,10 +27,13 @@ jobs:
         run: |
           echo "EC2_HOST=$(echo '${{ secrets.EC2_CREDENTIALS }}' | jq -r .ec2_host)" >> $GITHUB_ENV
           echo "EC2_USER=$(echo '${{ secrets.EC2_CREDENTIALS }}' | jq -r .ec2_user)" >> $GITHUB_ENV
+          echo "BASTION_HOST=$(echo '${{ secrets.EC2_CREDENTIALS }}' | jq -r .bastion_host)" >> $GITHUB_ENV
+          echo "BASTION_USER=$(echo '${{ secrets.EC2_CREDENTIALS }}' | jq -r .bastion_user)" >> $GITHUB_ENV
           echo "AWS_ACCESS_KEY_ID=$(echo '${{ secrets.EC2_CREDENTIALS }}' | jq -r .aws_access_key_id)" >> $GITHUB_ENV
           echo "AWS_SECRET_ACCESS_KEY=$(echo '${{ secrets.EC2_CREDENTIALS }}' | jq -r .aws_secret_access_key)" >> $GITHUB_ENV
           echo "DOCKER_USERNAME=$(echo '${{ secrets.DOCKER_CREDENTIALS }}' | jq -r .username)" >> $GITHUB_ENV
           echo "DOCKER_PASSWORD=$(echo '${{ secrets.DOCKER_CREDENTIALS }}' | jq -r .password)" >> $GITHUB_ENV
+          
 
       # 4. Configure AWS Credentials
       - name: Configure AWS Credentials
@@ -72,8 +75,8 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: |
-          echo "$PRIVATE_KEY" > ec2_key.pem
-          chmod 600 ec2_key.pem
+          echo "$PRIVATE_KEY" > BASTION_HOST.pem
+          chmod 600 BASTION_HOST.pem
 
       # 11. Deploy to EC2
       - name: Deploy to EC2 through Bastion Host
@@ -85,7 +88,7 @@ jobs:
           DOCKER_IMAGE: ${{ env.DOCKER_USERNAME }}/matdongsan-server:latest
         run: |
           # SSH to Bastion Host and from there to EC2
-          ssh -o StrictHostKeyChecking=no -i bastion_key.pem -A $BASTION_USER@$BASTION_HOST << EOF
+          ssh -o StrictHostKeyChecking=no -i BASTION_HOST.pem -A $BASTION_USER@$BASTION_HOST << EOF
             ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'ENDSSH'
               # Stop and remove any existing container
               docker stop matdongsan-server || true
