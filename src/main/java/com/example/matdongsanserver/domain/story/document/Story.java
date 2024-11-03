@@ -82,7 +82,8 @@ public class Story {
         this.translationContent = translationContent;
     }
 
-    public void updateTTSUrl(String ttsUrl) {
+    public Story updateTTSUrl(String ttsUrl) {
         this.ttsUrl = ttsUrl;
+        return this;
     }
 }

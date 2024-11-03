@@ -16,8 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -144,8 +142,9 @@ public class StoryService {
     }
 
     /**
-     * tts 변환
+     * tts 변환 -> 추후에 비동기 처리 고민
      */
+    @Transactional
     public String getStoryTTS(String id) throws IOException {
         Story story = storyRepository.findById(id)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
@@ -188,8 +187,7 @@ public class StoryService {
             amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
             String ttsUrl = amazonS3.getUrl(bucketName, fileName).toString();
 
-            story.updateTTSUrl(ttsUrl);
-            storyRepository.save(story);
+            storyRepository.save(story.updateTTSUrl(ttsUrl));
 
             //return new ByteArrayResource(response.getBody());
             return ttsUrl;
