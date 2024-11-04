@@ -91,12 +91,22 @@ public class StoryController {
     }
 
     @Operation(summary = "동화 좋아요")
-    @GetMapping("/likes/{memberId}/{storyId}")
+    @PostMapping("/likes/{memberId}/{storyId}")
     public ResponseEntity<Void> likeStory(
             @PathVariable Long memberId,
             @PathVariable String storyId
     ) throws IOException {
         storyService.addLike(storyId, memberId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "동화 좋아요 취소")
+    @DeleteMapping("/likes/{memberId}/{storyId}")
+    public ResponseEntity<Void> unlikeStory(
+            @PathVariable Long memberId,
+            @PathVariable String storyId
+    ) throws IOException {
+        storyService.removeLike(storyId, memberId);
         return ResponseEntity.noContent().build();
     }
 }

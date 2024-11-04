@@ -90,13 +90,13 @@ public class StoryDto {
     public static class StorySummary {
         private String id;
         private String title;
-        private Long views;
+        private Long likes;
         private String coverUrl;
 
         public StorySummary(Story story) {
             this.id = story.getId();
             this.title = story.getTitle();
-            this.views = story.getViews();
+            this.likes = story.getLikes();
             this.coverUrl = story.getCoverUrl();
         }
     }

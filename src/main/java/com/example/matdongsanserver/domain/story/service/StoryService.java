@@ -239,6 +239,19 @@ public class StoryService {
     /**
      * 동화 좋아요 취소
      */
+    @Transactional
+    public void removeLike(String storyId, Long memberId) {
+        Story story = storyRepository.findById(storyId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
+        );
+
+        storyLikeRepository.delete(storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId)
+                .orElseThrow(
+                        () -> new StoryException(StoryErrorCode.LIKE_NOT_EXISTS)
+                ));
+
+        storyRepository.save(story.removeLikes());
+    }
 
     /**
      * 최신 동화 리스트
