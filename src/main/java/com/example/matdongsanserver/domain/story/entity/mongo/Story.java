@@ -1,4 +1,4 @@
-package com.example.matdongsanserver.domain.story.document;
+package com.example.matdongsanserver.domain.story.entity.mongo;
 
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import jakarta.persistence.*;
