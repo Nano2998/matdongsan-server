@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -286,6 +287,15 @@ public class StoryService {
     /**
      * 좋아요 누른 동화 리스트
      */
+    public List<StoryDto.StorySummary> getLikedStories(Long memberId) {
+        return storyRepository.findByIdIn(storyLikeRepository.findByMemberId(memberId)
+                        .stream()
+                        .map(StoryLike::getStoryId)
+                        .collect(Collectors.toList()))
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
 
     /**
      * 내가 만든 동화 리스트 최신

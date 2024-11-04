@@ -14,4 +14,5 @@ public interface StoryRepository extends MongoRepository<Story, String> {
     List<Story> findByIsPublicTrueAndMemberIdOrderByLikesDesc(Long memberId);
     List<Story> findByMemberIdOrderByCreatedAtDesc(Long memberId);
     List<Story> findByMemberIdOrderByLikesDesc(Long memberId);
+    List<Story> findByIdIn(List<String> storyIds);
 }
