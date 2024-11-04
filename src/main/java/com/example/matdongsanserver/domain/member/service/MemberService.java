@@ -83,6 +83,12 @@ public class MemberService {
     /**
      * 자녀 조회
      */
+    public List<MemberDto.ChildDetail> getChildDetails(Long memberId) {
+        return childRepository.findByMemberId(memberId)
+                .stream()
+                .map(MemberDto.ChildDetail::new)
+                .toList();
+    }
 
     /**
      * 팔로우

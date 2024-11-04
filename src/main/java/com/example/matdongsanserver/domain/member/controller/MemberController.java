@@ -45,4 +45,13 @@ public class MemberController {
         return ResponseEntity.ok()
                 .body(memberService.registerChild(memberId, childCreationRequests));
     }
+
+    @Operation(summary = "자녀 조회")
+    @GetMapping("/children/{memberId}")
+    public ResponseEntity<List<MemberDto.ChildDetail>> registerChild(
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok()
+                .body(memberService.getChildDetails(memberId));
+    }
 }
