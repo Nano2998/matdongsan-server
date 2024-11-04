@@ -8,11 +8,13 @@ import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
+import com.example.matdongsanserver.domain.story.entity.StoryLike;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
+import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,6 +64,8 @@ public class StoryService {
     private final AmazonS3 amazonS3;
 
     private final MemberRepository memberRepository;
+
+    private final StoryLikeRepository storyLikeRepository;
 
     /**
      * 동화 생성
@@ -208,6 +212,57 @@ public class StoryService {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }
     }
+
+    /**
+     * 동화 좋아요
+     */
+    @Transactional
+    public void addLike(String storyId, Long memberId) {
+        Story story = storyRepository.findById(storyId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
+        );
+
+        if (storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId).isPresent()) {
+            throw new StoryException(StoryErrorCode.LIKE_ALREADY_EXISTS);
+        }
+
+        storyLikeRepository.save(StoryLike.builder()
+                        .storyId(storyId)
+                        .member(memberRepository.findById(memberId).orElseThrow(
+                                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+                        ))
+                .build());
+
+        storyRepository.save(story.addLikes());
+    }
+
+    /**
+     * 동화 좋아요 취소
+     */
+
+    /**
+     * 최신 동화 리스트
+     */
+
+    /**
+     * 인기 동화 리스트
+     */
+
+    /**
+     * 특정 작가의 동화 리스트 최신
+     */
+
+    /**
+     * 특정 작가의 동화 리스트 인기
+     */
+
+    /**
+     * 좋아요 누른 동화 리스트
+     */
+
+    /**
+     * 내가 만든 동화 리스트
+     */
 
     /**
      * 입력 받은 테마와 나이, 언어를 통해 프롬프트 제공

@@ -92,4 +92,14 @@ public class Story {
         this.ttsUrl = ttsUrl;
         return this;
     }
+
+    public Story addLikes() {
+        this.likes ++;
+        return this;
+    }
+
+    public Story removeLikes() {
+        this.likes --;
+        return this;
+    }
 }

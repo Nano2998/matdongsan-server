@@ -89,4 +89,14 @@ public class StoryController {
         return ResponseEntity.ok()
                 .body(storyService.getStoryTTS(storyId));
     }
+
+    @Operation(summary = "동화 좋아요")
+    @GetMapping("/likes/{memberId}/{storyId}")
+    public ResponseEntity<Void> likeStory(
+            @PathVariable Long memberId,
+            @PathVariable String storyId
+    ) throws IOException {
+        storyService.addLike(storyId, memberId);
+        return ResponseEntity.noContent().build();
+    }
 }
