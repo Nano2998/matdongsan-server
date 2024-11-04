@@ -65,4 +65,15 @@ public class MemberController {
         return ResponseEntity.noContent()
                 .build();
     }
+
+    @Operation(summary = "언팔로우")
+    @DeleteMapping("/follow/{memberId}/{followerId}")
+    public ResponseEntity<Void> unfollow(
+            @PathVariable Long memberId,
+            @PathVariable Long followerId
+    ) {
+        memberService.unfollow(memberId, followerId);
+        return ResponseEntity.noContent()
+                .build();
+    }
 }

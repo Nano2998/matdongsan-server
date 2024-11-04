@@ -97,7 +97,7 @@ public class MemberService {
      */
     @Transactional
     public void follow(Long memberId, Long followerId) {
-        if (followRepository.findByFollowerIdAndFollowingId(followerId, memberId).isPresent()) {
+        if (followRepository.findByFollowingIdAndFollowerId(memberId, followerId).isPresent()) {
             throw new MemberException(MemberErrorCode.FOLLOW_ALREADY_EXISTS);
         }
         followRepository.save(Follow.builder()
@@ -113,6 +113,16 @@ public class MemberService {
     /**
      * 팔로우 취소
      */
+    @Transactional
+    public void unfollow(Long memberId, Long followerId) {
+        Follow follow = followRepository.findByFollowingIdAndFollowerId(memberId, followerId).orElseThrow(
+                () ->  new MemberException(MemberErrorCode.FOLLOW_NOT_EXISTS)
+        );
+
+        follow.getFollower().getFollowingList().remove(follow);
+        follow.getFollowing().getFollowerList().remove(follow);
+        followRepository.delete(follow);
+    }
 
     /**
      * 팔로우 리스트 조회
