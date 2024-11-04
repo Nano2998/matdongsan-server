@@ -5,6 +5,9 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.matdongsanserver.common.config.ChatGptConfig;
 import com.example.matdongsanserver.common.config.PromptsConfig;
+import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
+import com.example.matdongsanserver.domain.member.exception.MemberException;
+import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.story.document.Language;
 import com.example.matdongsanserver.domain.story.document.Story;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
@@ -58,11 +61,16 @@ public class StoryService {
 
     private final AmazonS3 amazonS3;
 
+    private final MemberRepository memberRepository;
+
     /**
      * 동화 생성
      */
     @Transactional
-    public StoryDto.StoryCreationResponse generateStory(StoryDto.StoryCreationRequest requestDto) throws IOException {
+    public StoryDto.StoryCreationResponse generateStory(Long memberId, StoryDto.StoryCreationRequest requestDto) throws IOException {
+        memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+        );
         String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getGiven());
         int maxTokens = 0;
         if (requestDto.getLanguage() == Language.EN) {
@@ -79,6 +87,7 @@ public class StoryService {
                         .given(requestDto.getGiven())
                         .title(parseStory.get("title"))
                         .content(parseStory.get("content"))
+                        .memberId(memberId)
                         .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
                         .build()))
                 .build();
@@ -88,8 +97,8 @@ public class StoryService {
      * 영어 동화 번역 - 번역이 이미 있다면 그대로 전달, 없다면 번역 요청 후 전달
      */
     @Transactional
-    public StoryDto.StoryTranslationResponse translationStory(String id) throws IOException {
-        Story story = storyRepository.findById(id)
+    public StoryDto.StoryTranslationResponse translationStory(String storyId) throws IOException {
+        Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
         if (story.getLanguage().equals(Language.KO)) {
             throw new StoryException(StoryErrorCode.INVALID_LANGUAGE_FOR_TRANSLATION);
@@ -111,10 +120,14 @@ public class StoryService {
      * 동화 상세 수정
      */
     @Transactional
-    public StoryDto.StoryDetail updateStoryDetail(String id, StoryDto.StoryUpdateRequest requestDto) {
-        Story story = storyRepository.findById(id)
+    public StoryDto.StoryDetail updateStoryDetail(Long memberId, String storyId, StoryDto.StoryUpdateRequest requestDto) {
+        Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND))
                 .updateStoryDetail(requestDto);
+
+        if (!story.getMemberId().equals(memberId)) {
+            throw new StoryException(StoryErrorCode.STORY_EDIT_PERMISSION_DENIED);
+        }
 
         return StoryDto.StoryDetail.builder()
                 .story(storyRepository.save(story))
@@ -134,9 +147,9 @@ public class StoryService {
     /**
      * 동화 상세 조회
      */
-    public StoryDto.StoryDetail getStoryDetail(String id) {
+    public StoryDto.StoryDetail getStoryDetail(String storyId) {
         return StoryDto.StoryDetail.builder()
-                .story(storyRepository.findById(id)
+                .story(storyRepository.findById(storyId)
                         .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)))
                 .build();
     }

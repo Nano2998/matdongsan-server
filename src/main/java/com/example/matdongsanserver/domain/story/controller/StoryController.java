@@ -23,33 +23,39 @@ public class StoryController {
     private final StoryService storyService;
 
     @Operation(summary = "동화 생성")
-    @PostMapping
+    @PostMapping("/{memberId}")
     public ResponseEntity<StoryDto.StoryCreationResponse> generateStory(
-            @RequestBody StoryDto.StoryCreationRequest requestDto
+            @RequestBody StoryDto.StoryCreationRequest requestDto,
+            @PathVariable Long memberId
     ) throws IOException {
         return ResponseEntity.ok()
-                .body(storyService.generateStory(requestDto));
+                .body(storyService.generateStory(memberId, requestDto));
     }
 
     @Operation(summary = "전체 동화 조회")
-    @GetMapping
-    public ResponseEntity<List<StoryDto.StorySummary>> getAllStories() {
+    @GetMapping("/{memberId}")
+    public ResponseEntity<List<StoryDto.StorySummary>> getAllStories(
+            @PathVariable Long memberId
+    ) {
         return ResponseEntity.ok()
                 .body(storyService.getAllStories());
     }
 
     @Operation(summary = "동화 상세 수정")
-    @PatchMapping("/{storyId}")
+    @PatchMapping("/{memberId}/{storyId}")
     public ResponseEntity<StoryDto.StoryDetail> updateStoryDetail(
-            @PathVariable String storyId, @RequestBody StoryDto.StoryUpdateRequest requestDto
+            @PathVariable Long memberId,
+            @PathVariable String storyId,
+            @RequestBody StoryDto.StoryUpdateRequest requestDto
     ) {
         return ResponseEntity.ok()
-                .body(storyService.updateStoryDetail(storyId, requestDto));
+                .body(storyService.updateStoryDetail(memberId, storyId, requestDto));
     }
 
     @Operation(summary = "동화 상세 조회")
-    @GetMapping("/{storyId}")
+    @GetMapping("/{memberId}/{storyId}")
     public ResponseEntity<StoryDto.StoryDetail> getStoryDetail(
+            @PathVariable Long memberId,
             @PathVariable String storyId
     ) {
         return ResponseEntity.ok()
@@ -57,8 +63,9 @@ public class StoryController {
     }
 
     @Operation(summary = "영어 동화 번역")
-    @GetMapping("/translation/{storyId}")
+    @GetMapping("/translation/{memberId}/{storyId}")
     public ResponseEntity<StoryDto.StoryTranslationResponse> translateStory(
+            @PathVariable Long memberId,
             @PathVariable String storyId
     ) throws IOException {
         return ResponseEntity.ok()
@@ -66,8 +73,9 @@ public class StoryController {
     }
 
     @Operation(summary = "동화 TTS")
-    @GetMapping("/tts/{storyId}")
+    @GetMapping("/tts/{memberId}/{storyId}")
     public ResponseEntity<String> getStoryTTS(
+            @PathVariable Long memberId,
             @PathVariable String storyId
     ) throws IOException {
 //        HttpHeaders responseHeaders = new HttpHeaders();
