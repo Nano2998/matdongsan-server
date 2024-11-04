@@ -48,10 +48,21 @@ public class MemberController {
 
     @Operation(summary = "자녀 조회")
     @GetMapping("/children/{memberId}")
-    public ResponseEntity<List<MemberDto.ChildDetail>> registerChild(
+    public ResponseEntity<List<MemberDto.ChildDetail>> getChildDetails(
             @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
                 .body(memberService.getChildDetails(memberId));
+    }
+
+    @Operation(summary = "팔로우")
+    @GetMapping("/follow/{memberId}/{followerId}")
+    public ResponseEntity<Void> follow(
+            @PathVariable Long memberId,
+            @PathVariable Long followerId
+    ) {
+        memberService.follow(memberId, followerId);
+        return ResponseEntity.noContent()
+                .build();
     }
 }

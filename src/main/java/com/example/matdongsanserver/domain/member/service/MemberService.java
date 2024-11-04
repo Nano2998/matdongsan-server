@@ -2,6 +2,7 @@ package com.example.matdongsanserver.domain.member.service;
 
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.entity.Child;
+import com.example.matdongsanserver.domain.member.entity.Follow;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
@@ -58,6 +59,7 @@ public class MemberService {
     /**
      * 자녀 생성
      */
+    @Transactional
     public List<MemberDto.ChildDetail> registerChild(Long memberId, List<MemberDto.ChildCreationRequest> childCreationRequests) {
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
@@ -93,8 +95,26 @@ public class MemberService {
     /**
      * 팔로우
      */
+    @Transactional
+    public void follow(Long memberId, Long followerId) {
+        if (followRepository.findByFollowerIdAndFollowingId(followerId, memberId).isPresent()) {
+            throw new MemberException(MemberErrorCode.FOLLOW_ALREADY_EXISTS);
+        }
+        followRepository.save(Follow.builder()
+                .following(memberRepository.findById(memberId).orElseThrow(
+                        () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+                ))
+                .follower(memberRepository.findById(followerId).orElseThrow(
+                        () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+                ))
+                .build());
+    }
 
     /**
      * 팔로우 취소
+     */
+
+    /**
+     * 팔로우 리스트 조회
      */
 }
