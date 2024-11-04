@@ -64,7 +64,7 @@ public class Story {
         this.title = title;
         this.content = content;
         this.coverUrl = coverUrl;
-        this.isPublic = false;
+        this.isPublic = true;
         this.tags = new ArrayList<>();
         this.translationTitle = "";
         this.translationContent = "";

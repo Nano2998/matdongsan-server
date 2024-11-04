@@ -139,16 +139,6 @@ public class StoryService {
     }
 
     /**
-     * 전체 동화 리스트 조회 (isPubic 체크 필요)
-     */
-    public List<StoryDto.StorySummary> getAllStories() {
-        return storyRepository.findAll()
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
-    }
-
-    /**
      * 동화 상세 조회
      */
     public StoryDto.StoryDetail getStoryDetail(String storyId) {
@@ -256,14 +246,27 @@ public class StoryService {
     /**
      * 최신 동화 리스트
      */
+    public List<StoryDto.StorySummary> getRecentStories() {
+        return storyRepository.findByIsPublicTrueOrderByCreatedAtDesc()
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
 
     /**
      * 인기 동화 리스트
      */
+    public List<StoryDto.StorySummary> getPopularStories() {
+        return storyRepository.findByIsPublicTrueOrderByLikesDesc()
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
 
     /**
      * 특정 작가의 동화 리스트 최신
      */
+    
 
     /**
      * 특정 작가의 동화 리스트 인기

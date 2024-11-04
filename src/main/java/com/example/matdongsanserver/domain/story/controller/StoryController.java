@@ -32,15 +32,6 @@ public class StoryController {
                 .body(storyService.generateStory(memberId, requestDto));
     }
 
-    @Operation(summary = "전체 동화 조회")
-    @GetMapping("/{memberId}")
-    public ResponseEntity<List<StoryDto.StorySummary>> getAllStories(
-            @PathVariable Long memberId
-    ) {
-        return ResponseEntity.ok()
-                .body(storyService.getAllStories());
-    }
-
     @Operation(summary = "동화 상세 수정")
     @PatchMapping("/{memberId}/{storyId}")
     public ResponseEntity<StoryDto.StoryDetail> updateStoryDetail(
@@ -53,9 +44,8 @@ public class StoryController {
     }
 
     @Operation(summary = "동화 상세 조회")
-    @GetMapping("/{memberId}/{storyId}")
+    @GetMapping("/{storyId}")
     public ResponseEntity<StoryDto.StoryDetail> getStoryDetail(
-            @PathVariable Long memberId,
             @PathVariable String storyId
     ) {
         return ResponseEntity.ok()
@@ -63,9 +53,8 @@ public class StoryController {
     }
 
     @Operation(summary = "영어 동화 번역")
-    @GetMapping("/translation/{memberId}/{storyId}")
+    @GetMapping("/translation/{storyId}")
     public ResponseEntity<StoryDto.StoryTranslationResponse> translateStory(
-            @PathVariable Long memberId,
             @PathVariable String storyId
     ) throws IOException {
         return ResponseEntity.ok()
@@ -73,9 +62,8 @@ public class StoryController {
     }
 
     @Operation(summary = "동화 TTS")
-    @GetMapping("/tts/{memberId}/{storyId}")
+    @GetMapping("/tts/{storyId}")
     public ResponseEntity<String> getStoryTTS(
-            @PathVariable Long memberId,
             @PathVariable String storyId
     ) throws IOException {
 //        HttpHeaders responseHeaders = new HttpHeaders();
@@ -108,5 +96,21 @@ public class StoryController {
     ) throws IOException {
         storyService.removeLike(storyId, memberId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "전체 동화 조회 - 최신순")
+    @GetMapping("/recent")
+    public ResponseEntity<List<StoryDto.StorySummary>> getRecentStories(
+    ) {
+        return ResponseEntity.ok()
+                .body(storyService.getRecentStories());
+    }
+
+    @Operation(summary = "전체 동화 조회 - 좋아요순")
+    @GetMapping("/popular")
+    public ResponseEntity<List<StoryDto.StorySummary>> getPopularStories(
+    ) {
+        return ResponseEntity.ok()
+                .body(storyService.getPopularStories());
     }
 }
