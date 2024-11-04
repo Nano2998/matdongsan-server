@@ -8,12 +8,14 @@ import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import com.example.matdongsanserver.domain.story.document.Language;
-import com.example.matdongsanserver.domain.story.document.Story;
+import com.example.matdongsanserver.domain.story.entity.StoryLike;
+import com.example.matdongsanserver.domain.story.entity.mongo.Language;
+import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
-import com.example.matdongsanserver.domain.story.repository.StoryRepository;
+import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
+import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -62,6 +65,8 @@ public class StoryService {
     private final AmazonS3 amazonS3;
 
     private final MemberRepository memberRepository;
+
+    private final StoryLikeRepository storyLikeRepository;
 
     /**
      * 동화 생성
@@ -135,16 +140,6 @@ public class StoryService {
     }
 
     /**
-     * 전체 동화 리스트 조회 (isPubic 체크 필요)
-     */
-    public List<StoryDto.StorySummary> getAllStories() {
-        return storyRepository.findAll()
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
-    }
-
-    /**
      * 동화 상세 조회
      */
     public StoryDto.StoryDetail getStoryDetail(String storyId) {
@@ -207,6 +202,119 @@ public class StoryService {
         } else {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }
+    }
+
+    /**
+     * 동화 좋아요
+     */
+    @Transactional
+    public void addLike(String storyId, Long memberId) {
+        Story story = storyRepository.findById(storyId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
+        );
+
+        if (storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId).isPresent()) {
+            throw new StoryException(StoryErrorCode.LIKE_ALREADY_EXISTS);
+        }
+
+        storyLikeRepository.save(StoryLike.builder()
+                        .storyId(storyId)
+                        .member(memberRepository.findById(memberId).orElseThrow(
+                                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+                        ))
+                .build());
+
+        storyRepository.save(story.addLikes());
+    }
+
+    /**
+     * 동화 좋아요 취소
+     */
+    @Transactional
+    public void removeLike(String storyId, Long memberId) {
+        Story story = storyRepository.findById(storyId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
+        );
+
+        storyLikeRepository.delete(storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId)
+                .orElseThrow(
+                        () -> new StoryException(StoryErrorCode.LIKE_NOT_EXISTS)
+                ));
+
+        storyRepository.save(story.removeLikes());
+    }
+
+    /**
+     * 최신 동화 리스트
+     */
+    public List<StoryDto.StorySummary> getRecentStories() {
+        return storyRepository.findByIsPublicTrueOrderByCreatedAtDesc()
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
+
+    /**
+     * 인기 동화 리스트
+     */
+    public List<StoryDto.StorySummary> getPopularStories() {
+        return storyRepository.findByIsPublicTrueOrderByLikesDesc()
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
+
+    /**
+     * 특정 작가의 동화 리스트 최신
+     */
+    public List<StoryDto.StorySummary> getRecentStoriesByMemberId(Long memberId) {
+        return storyRepository.findByIsPublicTrueAndMemberIdOrderByCreatedAtDesc(memberId)
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
+
+    /**
+     * 특정 작가의 동화 리스트 인기
+     */
+    public List<StoryDto.StorySummary> getPopularStoriesByMemberId(Long memberId) {
+        return storyRepository.findByIsPublicTrueAndMemberIdOrderByLikesDesc(memberId)
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
+
+    /**
+     * 좋아요 누른 동화 리스트
+     */
+    public List<StoryDto.StorySummary> getLikedStories(Long memberId) {
+        return storyRepository.findByIdIn(storyLikeRepository.findByMemberId(memberId)
+                        .stream()
+                        .map(StoryLike::getStoryId)
+                        .collect(Collectors.toList()))
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
+
+    /**
+     * 내가 만든 동화 리스트 최신
+     */
+    public List<StoryDto.StorySummary> getRecentMyStories(Long memberId) {
+        return storyRepository.findByMemberIdOrderByCreatedAtDesc(memberId)
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
+
+    /**
+     * 내가 만든 동화 리스트 인기
+     */
+    public List<StoryDto.StorySummary> getPopularMyStories(Long memberId) {
+        return storyRepository.findByMemberIdOrderByLikesDesc(memberId)
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
     }
 
     /**

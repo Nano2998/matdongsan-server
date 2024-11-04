@@ -1,7 +1,7 @@
 package com.example.matdongsanserver.domain.story.dto;
 
-import com.example.matdongsanserver.domain.story.document.Language;
-import com.example.matdongsanserver.domain.story.document.Story;
+import com.example.matdongsanserver.domain.story.entity.mongo.Language;
+import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -90,13 +90,13 @@ public class StoryDto {
     public static class StorySummary {
         private String id;
         private String title;
-        private Long views;
+        private Long likes;
         private String coverUrl;
 
         public StorySummary(Story story) {
             this.id = story.getId();
             this.title = story.getTitle();
-            this.views = story.getViews();
+            this.likes = story.getLikes();
             this.coverUrl = story.getCoverUrl();
         }
     }

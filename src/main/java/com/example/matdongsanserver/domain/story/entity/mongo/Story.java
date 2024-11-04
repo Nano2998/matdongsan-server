@@ -1,4 +1,4 @@
-package com.example.matdongsanserver.domain.story.document;
+package com.example.matdongsanserver.domain.story.entity.mongo;
 
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import jakarta.persistence.*;
@@ -38,8 +38,6 @@ public class Story {
 
     private String translationContent; //영어 동화일 경우 번역본
 
-    private Long views; //조회수
-
     private String coverUrl; //표지 이미지
 
     private Boolean isPublic; //동화가 공개되었는지
@@ -65,9 +63,8 @@ public class Story {
         this.given = given;
         this.title = title;
         this.content = content;
-        this.views = 0L;
         this.coverUrl = coverUrl;
-        this.isPublic = false;
+        this.isPublic = true;
         this.tags = new ArrayList<>();
         this.translationTitle = "";
         this.translationContent = "";
@@ -90,6 +87,16 @@ public class Story {
 
     public Story updateTTSUrl(String ttsUrl) {
         this.ttsUrl = ttsUrl;
+        return this;
+    }
+
+    public Story addLikes() {
+        this.likes ++;
+        return this;
+    }
+
+    public Story removeLikes() {
+        this.likes --;
         return this;
     }
 }
