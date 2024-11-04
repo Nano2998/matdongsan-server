@@ -38,7 +38,7 @@ public class Member extends BaseTimeEntity {
     private List<Follow> followerList = new ArrayList<>();   // 나를 팔로우하는 사람들
 
     @Builder
-    public Member(String email, String profileImage, String nickname, Role role, Boolean isFirstLogin) {
+    public Member(String email, String profileImage, String nickname, Role role) {
         this.email = email;
         this.profileImage = profileImage;
         this.nickname = nickname;

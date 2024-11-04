@@ -122,7 +122,7 @@ public class StoryService {
     }
 
     /**
-     * 전체 동화 리스트 조회
+     * 전체 동화 리스트 조회 (isPubic 체크 필요)
      */
     public List<StoryDto.StorySummary> getAllStories() {
         return storyRepository.findAll()
