@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Member API", description = "회원 API")
 @RestController
 @RequiredArgsConstructor
@@ -32,5 +34,15 @@ public class MemberController {
     ) {
         return ResponseEntity.ok()
                 .body(memberService.getMemberDetail(memberId));
+    }
+
+    @Operation(summary = "자녀 생성")
+    @PostMapping("/children/{memberId}")
+    public ResponseEntity<List<MemberDto.ChildDetail>> registerChild(
+            @RequestBody List<MemberDto.ChildCreationRequest> childCreationRequests,
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok()
+                .body(memberService.registerChild(memberId, childCreationRequests));
     }
 }

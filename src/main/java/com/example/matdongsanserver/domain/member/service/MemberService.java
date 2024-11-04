@@ -1,6 +1,7 @@
 package com.example.matdongsanserver.domain.member.service;
 
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
+import com.example.matdongsanserver.domain.member.entity.Child;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
@@ -12,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -42,9 +46,9 @@ public class MemberService {
     /**
      * 맴버 조회
      */
-    public MemberDto.MemberDetail getMemberDetail(Long id) {
+    public MemberDto.MemberDetail getMemberDetail(Long memberId) {
         return MemberDto.MemberDetail.builder()
-                .member(memberRepository.findById(id).orElseThrow(
+                .member(memberRepository.findById(memberId).orElseThrow(
                         () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
                 ))
                 .build();
@@ -54,6 +58,27 @@ public class MemberService {
     /**
      * 자녀 생성
      */
+    public List<MemberDto.ChildDetail> registerChild(Long memberId, List<MemberDto.ChildCreationRequest> childCreationRequests) {
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+        );
+
+        List<MemberDto.ChildDetail> childDetails = new ArrayList<>();
+
+        childCreationRequests.forEach(childCreationRequest -> {
+            childDetails.add(MemberDto.ChildDetail.builder()
+                    .child(childRepository.save(Child.builder()
+                            .member(member)
+                            .name(childCreationRequest.getName())
+                            .birthday(childCreationRequest.getBirthday())
+                            .englishAge(childCreationRequest.getEnglishAge())
+                            .koreanAge(childCreationRequest.getKoreanAge())
+                            .nickname(childCreationRequest.getNickname())
+                            .build()))
+                    .build());
+        });
+        return childDetails;
+    }
 
     /**
      * 자녀 조회
