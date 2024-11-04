@@ -56,7 +56,7 @@ public class MemberController {
     }
 
     @Operation(summary = "팔로우")
-    @GetMapping("/follow/{memberId}/{followerId}")
+    @PostMapping("/follow/{memberId}/{followerId}")
     public ResponseEntity<Void> follow(
             @PathVariable Long memberId,
             @PathVariable Long followerId
@@ -75,5 +75,14 @@ public class MemberController {
         memberService.unfollow(memberId, followerId);
         return ResponseEntity.noContent()
                 .build();
+    }
+
+    @Operation(summary = "팔로우 리스트 조회")
+    @GetMapping("/follow/{memberId}")
+    public ResponseEntity<List<MemberDto.MemberSummary>> getFollowers(
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok()
+                .body(memberService.getFollowers(memberId));
     }
 }

@@ -127,4 +127,15 @@ public class MemberService {
     /**
      * 팔로우 리스트 조회
      */
+    public List<MemberDto.MemberSummary> getFollowers(Long memberId) {
+        List<MemberDto.MemberSummary> followers = new ArrayList<>();
+        followRepository.findByFollowingId(memberId).forEach(
+                following -> {
+                    followers.add(MemberDto.MemberSummary.builder()
+                                    .member(following.getFollower())
+                            .build());
+                }
+        );
+        return followers;
+    }
 }

@@ -80,22 +80,16 @@ public class MemberDto {
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
     public static class MemberSummary {
         private Long id;
-        private String email;
         private String profileImage;
         private String nickname;
-        private Role role;
         private Long followers;
-        private Long followings;
 
         @Builder
         public MemberSummary(Member member) {
             this.id = member.getId();
-            this.email = member.getEmail();
             this.profileImage = member.getProfileImage();
             this.nickname = member.getNickname();
-            this.role = member.getRole();
             this.followers = (long) member.getFollowerList().size();
-            this.followings = (long) member.getFollowingList().size();
         }
     }
 }
