@@ -44,9 +44,13 @@ public class Story {
 
     private Boolean isPublic; //동화가 공개되었는지
 
-    private List<String> tags; // 해시태그 리스트 추가
+    private List<String> tags; // 해시태그 리스트
 
     private String ttsUrl;  //TTS 저장 주소
+
+    private Long likes;  //좋아요 수
+
+    private Long memberId;  //생성한 멤버 아이디
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -55,7 +59,7 @@ public class Story {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Story(int age, Language language, String given, String title, String content, String coverUrl) {
+    public Story(int age, Language language, String given, String title, String content, String coverUrl, Long memberId) {
         this.age = age;
         this.language = language;
         this.given = given;
@@ -68,6 +72,8 @@ public class Story {
         this.translationTitle = "";
         this.translationContent = "";
         this.ttsUrl = "";
+        this.likes = 0L;
+        this.memberId = memberId;
     }
 
     public Story updateStoryDetail(StoryDto.StoryUpdateRequest storyUpdateRequest) {

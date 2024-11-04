@@ -51,6 +51,9 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 
     implementation'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+
+    //헬스 체크
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 }
 
 tasks.named('test') {
