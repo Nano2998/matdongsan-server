@@ -3,6 +3,8 @@ package com.example.matdongsanserver.domain.member.service;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
+import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
+import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.ChildRepository;
 import com.example.matdongsanserver.domain.member.repository.FollowRepository;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -40,6 +42,14 @@ public class MemberService {
     /**
      * 맴버 조회
      */
+    public MemberDto.MemberDetail getMemberDetail(Long id) {
+        return MemberDto.MemberDetail.builder()
+                .member(memberRepository.findById(id).orElseThrow(
+                        () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+                ))
+                .build();
+
+    }
 
     /**
      * 자녀 생성

@@ -16,7 +16,7 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @Operation(summary = "회원 생성 - 로그인 도입 후 수정 예정")
+    @Operation(summary = "회원 생성")
     @PostMapping
     public ResponseEntity<MemberDto.MemberDetail> registerMember(
             @RequestBody MemberDto.MemberCreationRequest memberCreationRequest
@@ -25,5 +25,12 @@ public class MemberController {
                 .body(memberService.registerMember(memberCreationRequest));
     }
 
-    
+    @Operation(summary = "회원 조회")
+    @GetMapping("/{memberId}")
+    public ResponseEntity<MemberDto.MemberDetail> getMemberDetail(
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok()
+                .body(memberService.getMemberDetail(memberId));
+    }
 }
