@@ -99,6 +99,10 @@ jobs:
 
               # Pull the latest Docker image
               docker pull $DOCKER_IMAGE
-
-              # Run the Docker container
+              
+              # Stop and remove any existing container
+              docker stop matdongsan-server || true
+              docker rm matdongsan-server || true
+              
+              # Run the Docker container with the fixed port
               docker run -d --name matdongsan-server -p 8080:8080 $DOCKER_IMAGE
