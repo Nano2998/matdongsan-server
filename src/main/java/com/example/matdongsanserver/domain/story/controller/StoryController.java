@@ -113,4 +113,22 @@ public class StoryController {
         return ResponseEntity.ok()
                 .body(storyService.getPopularStories());
     }
+
+    @Operation(summary = "특정 작가의 동화 조회 - 최신순")
+    @GetMapping("/recent/{memberId}")
+    public ResponseEntity<List<StoryDto.StorySummary>> getRecentStoriesByWriter(
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok()
+                .body(storyService.getRecentStoriesByMemberId(memberId));
+    }
+
+    @Operation(summary = "특정 작가의 동화 조회 - 좋아요순")
+    @GetMapping("/popular/{memberId}")
+    public ResponseEntity<List<StoryDto.StorySummary>> getPopularStoriesByWriter(
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok()
+                .body(storyService.getPopularStoriesByMemberId(memberId));
+    }
 }

@@ -266,18 +266,33 @@ public class StoryService {
     /**
      * 특정 작가의 동화 리스트 최신
      */
-    
+    public List<StoryDto.StorySummary> getRecentStoriesByMemberId(Long memberId) {
+        return storyRepository.findByIsPublicTrueAndMemberIdOrderByCreatedAtDesc(memberId)
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
 
     /**
      * 특정 작가의 동화 리스트 인기
      */
+    public List<StoryDto.StorySummary> getPopularStoriesByMemberId(Long memberId) {
+        return storyRepository.findByIsPublicTrueAndMemberIdOrderByLikesDesc(memberId)
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
 
     /**
      * 좋아요 누른 동화 리스트
      */
 
     /**
-     * 내가 만든 동화 리스트
+     * 내가 만든 동화 리스트 최신
+     */
+
+    /**
+     * 내가 만든 동화 리스트 인기
      */
 
     /**
