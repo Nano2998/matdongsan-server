@@ -115,20 +115,38 @@ public class StoryController {
     }
 
     @Operation(summary = "특정 작가의 동화 조회 - 최신순")
-    @GetMapping("/recent/{memberId}")
+    @GetMapping("/recent/{writerId}")
     public ResponseEntity<List<StoryDto.StorySummary>> getRecentStoriesByWriter(
-            @PathVariable Long memberId
+            @PathVariable Long writerId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.getRecentStoriesByMemberId(memberId));
+                .body(storyService.getRecentStoriesByMemberId(writerId));
     }
 
     @Operation(summary = "특정 작가의 동화 조회 - 좋아요순")
-    @GetMapping("/popular/{memberId}")
+    @GetMapping("/popular/{writerId}")
     public ResponseEntity<List<StoryDto.StorySummary>> getPopularStoriesByWriter(
+            @PathVariable Long writerId
+    ) {
+        return ResponseEntity.ok()
+                .body(storyService.getPopularStoriesByMemberId(writerId));
+    }
+
+    @Operation(summary = "내 동화 조회 - 최신순")
+    @GetMapping("/recent/my/{memberId}")
+    public ResponseEntity<List<StoryDto.StorySummary>> getRecentMyStories(
             @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.getPopularStoriesByMemberId(memberId));
+                .body(storyService.getRecentMyStories(memberId));
+    }
+
+    @Operation(summary = "내 동화 조회 - 좋아요순")
+    @GetMapping("/popular/my/{memberId}")
+    public ResponseEntity<List<StoryDto.StorySummary>> getPopularMyStories(
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok()
+                .body(storyService.getPopularMyStories(memberId));
     }
 }

@@ -290,10 +290,22 @@ public class StoryService {
     /**
      * 내가 만든 동화 리스트 최신
      */
+    public List<StoryDto.StorySummary> getRecentMyStories(Long memberId) {
+        return storyRepository.findByMemberIdOrderByCreatedAtDesc(memberId)
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
 
     /**
      * 내가 만든 동화 리스트 인기
      */
+    public List<StoryDto.StorySummary> getPopularMyStories(Long memberId) {
+        return storyRepository.findByMemberIdOrderByLikesDesc(memberId)
+                .stream()
+                .map(StoryDto.StorySummary::new)
+                .toList();
+    }
 
     /**
      * 입력 받은 테마와 나이, 언어를 통해 프롬프트 제공
