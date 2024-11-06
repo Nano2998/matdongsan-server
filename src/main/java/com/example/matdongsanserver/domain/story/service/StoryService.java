@@ -159,7 +159,7 @@ public class StoryService {
 
         // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
         if(story.getLanguage() == Language.KO){
-            throw new StoryException(StoryErrorCode.INVALID_LANGUAGE_FOR_TRANSLATION);
+            throw new StoryException(StoryErrorCode.KOREAN_TTS_NOT_AVAILABLE);
         }
 
         // 이미 ttsUrl이 저장되어 있다면 반환
