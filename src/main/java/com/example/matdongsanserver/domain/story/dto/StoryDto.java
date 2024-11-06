@@ -92,12 +92,14 @@ public class StoryDto {
         private String title;
         private Long likes;
         private String coverUrl;
+        private List<String> tags;
 
         public StorySummary(Story story) {
             this.id = story.getId();
             this.title = story.getTitle();
             this.likes = story.getLikes();
             this.coverUrl = story.getCoverUrl();
+            this.tags = story.getTags();
         }
     }
 
