@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.domain.story.dto;
 
+import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -92,12 +93,14 @@ public class StoryDto {
         private String title;
         private Long likes;
         private String coverUrl;
+        private List<String> tags;
 
         public StorySummary(Story story) {
             this.id = story.getId();
             this.title = story.getTitle();
             this.likes = story.getLikes();
             this.coverUrl = story.getCoverUrl();
+            this.tags = story.getTags();
         }
     }
 
@@ -110,15 +113,21 @@ public class StoryDto {
         private Language language;
         private List<String> tags;
         private LocalDateTime createdAt;
+        private String writerNickname;
 
         @Builder
-        public StoryDetail(Story story) {
+        public StoryDetail(Story story, Member member) {
             super(story);
             this.content = story.getContent();
             this.age = story.getAge();
             this.language = story.getLanguage();
             this.tags = story.getTags();
             this.createdAt = story.getCreatedAt();
+            if (member != null) {
+                this.writerNickname = member.getNickname();
+            } else {
+                this.writerNickname = null;
+            }
         }
     }
 

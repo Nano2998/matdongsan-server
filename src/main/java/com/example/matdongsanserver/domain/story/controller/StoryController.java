@@ -5,14 +5,8 @@ import com.example.matdongsanserver.domain.story.service.StoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
-import java.util.List;
 
 @Tag(name = "Story API", description = "동화 API")
 @RestController
@@ -27,7 +21,7 @@ public class StoryController {
     public ResponseEntity<StoryDto.StoryCreationResponse> generateStory(
             @RequestBody StoryDto.StoryCreationRequest requestDto,
             @PathVariable Long memberId
-    ) throws IOException {
+    ) {
         return ResponseEntity.ok()
                 .body(storyService.generateStory(memberId, requestDto));
     }
@@ -56,7 +50,7 @@ public class StoryController {
     @GetMapping("/translation/{storyId}")
     public ResponseEntity<StoryDto.StoryTranslationResponse> translateStory(
             @PathVariable String storyId
-    ) throws IOException {
+    ) {
         return ResponseEntity.ok()
                 .body(storyService.translationStory(storyId));
     }
@@ -65,15 +59,7 @@ public class StoryController {
     @GetMapping("/tts/{storyId}")
     public ResponseEntity<String> getStoryTTS(
             @PathVariable String storyId
-    ) throws IOException {
-//        HttpHeaders responseHeaders = new HttpHeaders();
-//        responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-//        responseHeaders.setContentDispositionFormData("attachment", "story_tts.mp3");
-//        Resource resource = storyService.getStoryTTS(storyId);
-//        return ResponseEntity.ok()
-//                .headers(responseHeaders)
-//                .contentLength(resource.contentLength())
-//                .body(resource);
+    ) {
         return ResponseEntity.ok()
                 .body(storyService.getStoryTTS(storyId));
     }
@@ -83,7 +69,7 @@ public class StoryController {
     public ResponseEntity<Void> likeStory(
             @PathVariable Long memberId,
             @PathVariable String storyId
-    ) throws IOException {
+    ) {
         storyService.addLike(storyId, memberId);
         return ResponseEntity.noContent().build();
     }
@@ -93,7 +79,7 @@ public class StoryController {
     public ResponseEntity<Void> unlikeStory(
             @PathVariable Long memberId,
             @PathVariable String storyId
-    ) throws IOException {
+    ) {
         storyService.removeLike(storyId, memberId);
         return ResponseEntity.noContent().build();
     }

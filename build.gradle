@@ -54,6 +54,14 @@ dependencies {
 
     //헬스 체크
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    //하드웨어 연결
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
+
+    //음성 파일 변환
+    implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    implementation 'com.googlecode.soundlibs:jlayer:1.0.1.4'
+    implementation 'com.googlecode.soundlibs:tritonus-share:0.3.7-2'
 }
 
 tasks.named('test') {

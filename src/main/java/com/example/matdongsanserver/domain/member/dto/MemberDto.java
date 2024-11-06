@@ -29,9 +29,10 @@ public class MemberDto {
         private Role role;
         private Long followers;
         private Long followings;
+        private Long storyCount;
 
         @Builder
-        public MemberDetail(Member member) {
+        public MemberDetail(Member member, Long storyCount) {
             this.id = member.getId();
             this.email = member.getEmail();
             this.profileImage = member.getProfileImage();
@@ -39,6 +40,7 @@ public class MemberDto {
             this.role = member.getRole();
             this.followers = (long) member.getFollowerList().size();
             this.followings = (long) member.getFollowingList().size();
+            this.storyCount = storyCount;
         }
     }
 

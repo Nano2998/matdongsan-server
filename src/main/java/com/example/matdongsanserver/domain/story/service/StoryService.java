@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.matdongsanserver.common.config.ChatGptConfig;
 import com.example.matdongsanserver.common.config.PromptsConfig;
+import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -72,7 +73,7 @@ public class StoryService {
      * 동화 생성
      */
     @Transactional
-    public StoryDto.StoryCreationResponse generateStory(Long memberId, StoryDto.StoryCreationRequest requestDto) throws IOException {
+    public StoryDto.StoryCreationResponse generateStory(Long memberId, StoryDto.StoryCreationRequest requestDto) {
         memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
         );
@@ -102,7 +103,7 @@ public class StoryService {
      * 영어 동화 번역 - 번역이 이미 있다면 그대로 전달, 없다면 번역 요청 후 전달
      */
     @Transactional
-    public StoryDto.StoryTranslationResponse translationStory(String storyId) throws IOException {
+    public StoryDto.StoryTranslationResponse translationStory(String storyId) {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
         if (story.getLanguage().equals(Language.KO)) {
@@ -136,6 +137,8 @@ public class StoryService {
 
         return StoryDto.StoryDetail.builder()
                 .story(storyRepository.save(story))
+                .member(memberRepository.findById(memberId)
+                        .orElse(null))
                 .build();
     }
 
@@ -143,9 +146,12 @@ public class StoryService {
      * 동화 상세 조회
      */
     public StoryDto.StoryDetail getStoryDetail(String storyId) {
+        Story story = storyRepository.findById(storyId)
+                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
         return StoryDto.StoryDetail.builder()
-                .story(storyRepository.findById(storyId)
-                        .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)))
+                .story(story)
+                .member(memberRepository.findById(story.getMemberId())
+                        .orElse(null))
                 .build();
     }
 
@@ -153,53 +159,57 @@ public class StoryService {
      * tts 변환 -> 추후에 비동기 처리 고민
      */
     @Transactional
-    public String getStoryTTS(String id) throws IOException {
-        Story story = storyRepository.findById(id)
-                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
+    public String getStoryTTS(String id) {
+        try{
+            Story story = storyRepository.findById(id)
+                    .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
 
-        // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
-        if(story.getLanguage() == Language.KO){
-            throw new StoryException(StoryErrorCode.INVALID_LANGUAGE_FOR_TRANSLATION);
-        }
+            // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
+            if(story.getLanguage() == Language.KO){
+                throw new StoryException(StoryErrorCode.KOREAN_TTS_NOT_AVAILABLE);
+            }
 
-        // 이미 ttsUrl이 저장되어 있다면 반환
-        if (!story.getTtsUrl().isBlank()){
-            return story.getTtsUrl();
-        }
+            // 이미 ttsUrl이 저장되어 있다면 반환
+            if (!story.getTtsUrl().isBlank()){
+                return story.getTtsUrl();
+            }
 
-        HttpHeaders headers = chatGptConfig.httpHeaders();
+            HttpHeaders headers = chatGptConfig.httpHeaders();
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", ttsModel);
-        requestBody.put("voice", ttsVoice);
-        requestBody.put("input", story.getContent());
-        requestBody.put("speed", 0.95);
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", ttsModel);
+            requestBody.put("voice", ttsVoice);
+            requestBody.put("input", story.getContent());
+            requestBody.put("speed", 0.95);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonBody = objectMapper.writeValueAsString(requestBody);
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
 
-        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
-        ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
+            ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
 
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            String fileName = id + ".mp3";
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                String fileName = id + ".mp3";
 
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(response.getBody());
+                ByteArrayInputStream inputStream = new ByteArrayInputStream(response.getBody());
 
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType("audio/mpeg");
-            metadata.setContentLength(response.getBody().length);
+                ObjectMetadata metadata = new ObjectMetadata();
+                metadata.setContentType("audio/mpeg");
+                metadata.setContentLength(response.getBody().length);
 
-            // S3에 파일 업로드
-            amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
-            String ttsUrl = amazonS3.getUrl(bucketName, fileName).toString();
+                // S3에 파일 업로드
+                amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
+                String ttsUrl = amazonS3.getUrl(bucketName, fileName).toString();
 
-            storyRepository.save(story.updateTTSUrl(ttsUrl));
+                storyRepository.save(story.updateTTSUrl(ttsUrl));
 
-            //return new ByteArrayResource(response.getBody());
-            return ttsUrl;
-        } else {
+                //return new ByteArrayResource(response.getBody());
+                return ttsUrl;
+            } else {
+                throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
+            }
+        } catch (IOException e) {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }
     }
@@ -324,7 +334,7 @@ public class StoryService {
         if (language == Language.EN) {
             String template = promptsConfig.getEn().get(age);
             if (template != null) {
-                return String.format(template, given);
+                return template.replace("{given}", given);
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
         } else if (language == Language.KO) {
@@ -333,7 +343,7 @@ public class StoryService {
             if (storyElementsTemplate != null && template != null) {
                 //String storyElements = storyElementsTemplate.replace("{given}", given).replace("{age}", String.valueOf(age));
                 //return template.replace("{story_elements}", storyElements);
-                return template.replace("{story_elements}", given);
+                return storyElementsTemplate + template.replace("{given}", given);
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
         } else {
@@ -367,29 +377,34 @@ public class StoryService {
     /**
      * chat gpt로 요청 후 스토리만 반환
      */
-    private String sendOpenAiRequest(String prompt, int maxTokens) throws IOException {
-        HttpHeaders headers = chatGptConfig.httpHeaders();
+    private String sendOpenAiRequest(String prompt, int maxTokens) {
+        try{
+            HttpHeaders headers = chatGptConfig.httpHeaders();
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", aiModel);
-        requestBody.put("max_tokens", maxTokens);
-        requestBody.put("temperature", 0.9);
-        requestBody.put("messages", new Object[]{
-                Map.of("role", "system", "content", "Generate text that faithfully fulfills the user's request."),
-                Map.of("role", "user", "content", prompt)
-        });
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", aiModel);
+            requestBody.put("max_tokens", maxTokens);
+            requestBody.put("temperature", 0.9);
+            requestBody.put("messages", new Object[]{
+                    Map.of("role", "system", "content", "Generate text that faithfully fulfills the user's request."),
+                    Map.of("role", "user", "content", prompt)
+            });
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonBody = objectMapper.writeValueAsString(requestBody);
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
 
-        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
-        ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
+            ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
 
-        if (response.getStatusCode().is2xxSuccessful()) {
-            StoryDto.ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<StoryDto.ChatGptResponse>(){});
-            return chatGptResponse.getChoices().get(0).getMessage().getContent();
-        } else {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                StoryDto.ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<StoryDto.ChatGptResponse>(){});
+                return chatGptResponse.getChoices().get(0).getMessage().getContent();
+            } else {
+                throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
+            }
+
+        } catch (IOException e) {
             throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
         }
     }
@@ -402,7 +417,7 @@ public class StoryService {
 
         String[] parts = response.split("Title: ", 2);
         if (parts.length > 1) {
-            String[] titleAndContent = parts[1].split(", Content: ", 2);
+            String[] titleAndContent = parts[1].split("\nContent: ", 2);
 
             String title = titleAndContent[0].trim();
             String content = titleAndContent.length > 1 ? titleAndContent[1].trim() : "";
@@ -417,28 +432,32 @@ public class StoryService {
     /**
      * 영어 동화 번역 요청 전송
      */
-    private String sendTranslationRequest(String title, String content) throws IOException {
-        HttpHeaders headers = chatGptConfig.httpHeaders();
-        String story = "Title: " + title + ", Content: " + content;
+    private String sendTranslationRequest(String title, String content) {
+        try{
+            HttpHeaders headers = chatGptConfig.httpHeaders();
+            String story = "Title: " + title + ", Content: " + content;
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", aiModel);
-        requestBody.put("messages", new Object[]{
-                Map.of("role", "system", "content", promptsConfig.getTranslation()),
-                Map.of("role", "user", "content", story)
-        });
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonBody = objectMapper.writeValueAsString(requestBody);
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", aiModel);
+            requestBody.put("messages", new Object[]{
+                    Map.of("role", "system", "content", promptsConfig.getTranslation()),
+                    Map.of("role", "user", "content", story)
+            });
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
 
-        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
-        ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
+            ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
 
-        if (response.getStatusCode().is2xxSuccessful()) {
-            StoryDto.ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<StoryDto.ChatGptResponse>(){});
-            return chatGptResponse.getChoices().get(0).getMessage().getContent();
-        } else {
-            throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                StoryDto.ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<StoryDto.ChatGptResponse>(){});
+                return chatGptResponse.getChoices().get(0).getMessage().getContent();
+            } else {
+                throw new StoryException(StoryErrorCode.STORY_TRANSLATION_FAILED);
+            }
+        } catch (IOException e) {
+            throw new StoryException(StoryErrorCode.STORY_TRANSLATION_FAILED);
         }
     }
 }

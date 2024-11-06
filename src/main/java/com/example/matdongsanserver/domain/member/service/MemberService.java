@@ -10,6 +10,7 @@ import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.ChildRepository;
 import com.example.matdongsanserver.domain.member.repository.FollowRepository;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
+import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final ChildRepository childRepository;
     private final FollowRepository followRepository;
+    private final StoryRepository storyRepository;
 
     /**
      * 멤버 생성 - 로그인 도입시 수정 예정
@@ -41,6 +43,7 @@ public class MemberService {
                         .nickname(memberCreationRequest.getNickname())
                         .profileImage(memberCreationRequest.getProfileImage())
                         .build()))
+                .storyCount(0L)
                 .build();
     }
 
@@ -52,6 +55,7 @@ public class MemberService {
                 .member(memberRepository.findById(memberId).orElseThrow(
                         () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
                 ))
+                .storyCount(storyRepository.countByMemberId(memberId))
                 .build();
 
     }
