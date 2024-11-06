@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.matdongsanserver.common.config.ChatGptConfig;
 import com.example.matdongsanserver.common.config.PromptsConfig;
+import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -136,6 +137,8 @@ public class StoryService {
 
         return StoryDto.StoryDetail.builder()
                 .story(storyRepository.save(story))
+                .member(memberRepository.findById(memberId)
+                        .orElse(null))
                 .build();
     }
 
@@ -143,9 +146,12 @@ public class StoryService {
      * 동화 상세 조회
      */
     public StoryDto.StoryDetail getStoryDetail(String storyId) {
+        Story story = storyRepository.findById(storyId)
+                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
         return StoryDto.StoryDetail.builder()
-                .story(storyRepository.findById(storyId)
-                        .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)))
+                .story(story)
+                .member(memberRepository.findById(story.getMemberId())
+                        .orElse(null))
                 .build();
     }
 
@@ -328,7 +334,7 @@ public class StoryService {
         if (language == Language.EN) {
             String template = promptsConfig.getEn().get(age);
             if (template != null) {
-                return String.format(template, given);
+                return template.replace("{given}", given);
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
         } else if (language == Language.KO) {
@@ -411,7 +417,7 @@ public class StoryService {
 
         String[] parts = response.split("Title: ", 2);
         if (parts.length > 1) {
-            String[] titleAndContent = parts[1].split(", Content: ", 2);
+            String[] titleAndContent = parts[1].split("\nContent: ", 2);
 
             String title = titleAndContent[0].trim();
             String content = titleAndContent.length > 1 ? titleAndContent[1].trim() : "";

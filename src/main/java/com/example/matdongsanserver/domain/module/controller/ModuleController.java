@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-
 @Tag(name = "Module API", description = "모듈 API")
 @RestController
 @RequiredArgsConstructor
