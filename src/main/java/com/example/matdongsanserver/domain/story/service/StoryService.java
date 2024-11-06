@@ -333,7 +333,7 @@ public class StoryService {
             if (storyElementsTemplate != null && template != null) {
                 //String storyElements = storyElementsTemplate.replace("{given}", given).replace("{age}", String.valueOf(age));
                 //return template.replace("{story_elements}", storyElements);
-                return template.replace("{story_elements}", given);
+                return storyElementsTemplate + template.replace("{given}", given);
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
         } else {
