@@ -40,7 +40,7 @@ public class ModuleService {
     }
 
     @Transactional
-    public void sendCommand(String storyId) throws IOException {
+    public void sendCommand(String storyId) {
         String command = "play-and-record " + storyService.getStoryTTS(storyId);
         MqttMessage message = new MqttMessage(command.getBytes());
         message.setQos(1); // QoS 설정 (1 = 전달 보장)

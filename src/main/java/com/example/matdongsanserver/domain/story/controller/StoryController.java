@@ -27,7 +27,7 @@ public class StoryController {
     public ResponseEntity<StoryDto.StoryCreationResponse> generateStory(
             @RequestBody StoryDto.StoryCreationRequest requestDto,
             @PathVariable Long memberId
-    ) throws IOException {
+    ) {
         return ResponseEntity.ok()
                 .body(storyService.generateStory(memberId, requestDto));
     }
@@ -56,7 +56,7 @@ public class StoryController {
     @GetMapping("/translation/{storyId}")
     public ResponseEntity<StoryDto.StoryTranslationResponse> translateStory(
             @PathVariable String storyId
-    ) throws IOException {
+    ) {
         return ResponseEntity.ok()
                 .body(storyService.translationStory(storyId));
     }
@@ -65,7 +65,7 @@ public class StoryController {
     @GetMapping("/tts/{storyId}")
     public ResponseEntity<String> getStoryTTS(
             @PathVariable String storyId
-    ) throws IOException {
+    ) {
 //        HttpHeaders responseHeaders = new HttpHeaders();
 //        responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 //        responseHeaders.setContentDispositionFormData("attachment", "story_tts.mp3");
@@ -83,7 +83,7 @@ public class StoryController {
     public ResponseEntity<Void> likeStory(
             @PathVariable Long memberId,
             @PathVariable String storyId
-    ) throws IOException {
+    ) {
         storyService.addLike(storyId, memberId);
         return ResponseEntity.noContent().build();
     }
@@ -93,7 +93,7 @@ public class StoryController {
     public ResponseEntity<Void> unlikeStory(
             @PathVariable Long memberId,
             @PathVariable String storyId
-    ) throws IOException {
+    ) {
         storyService.removeLike(storyId, memberId);
         return ResponseEntity.noContent().build();
     }

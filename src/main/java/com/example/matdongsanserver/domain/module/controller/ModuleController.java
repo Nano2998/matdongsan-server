@@ -19,7 +19,7 @@ public class ModuleController {
     @GetMapping("/send/{storyId}")
     public ResponseEntity<Void> sendCommand(
             @PathVariable String storyId
-    ) throws IOException {
+    ) {
         moduleService.sendCommand(storyId);
         return ResponseEntity.noContent().build();
     }
