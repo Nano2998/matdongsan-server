@@ -1,6 +1,7 @@
 package com.example.matdongsanserver.domain.module.controller;
 
 import com.example.matdongsanserver.domain.module.service.ModuleService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ public class ModuleController {
 
     private final ModuleService moduleService;
 
+    @Operation(summary = "모듈로 TTS 실행")
     @GetMapping("/send/{storyId}")
     public ResponseEntity<Void> sendCommand(
             @PathVariable String storyId
