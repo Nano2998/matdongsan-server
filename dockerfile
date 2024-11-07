@@ -1,10 +1,10 @@
 # 빌더 단계
-FROM gradle:8.10.2-jdk17 as builder
+FROM gradle:8.10.2-jdk17 AS builder
 WORKDIR /build
 
-# Gradle 설정 파일 복사 및 의존성 다운로드
+# 의존성만 먼저 다운로드
 COPY build.gradle settings.gradle /build/
-RUN gradle build -x test --parallel --continue > /dev/null 2>&1 || true
+RUN gradle build -x test --parallel --continue || true
 
 # 애플리케이션 코드 복사 및 빌드
 COPY . /build
@@ -18,6 +18,9 @@ WORKDIR /app
 # 빌드된 JAR 파일만 복사
 COPY --from=builder /build/build/libs/matdongsan-server-0.0.1-SNAPSHOT.jar .
 
-EXPOSE 8080
+# 필요한 환경 변수 설정 (예: 메모리 최적화)
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
+# 포트 노출 및 시작 명령어
+EXPOSE 8080
 CMD ["java", "-jar", "./matdongsan-server-0.0.1-SNAPSHOT.jar"]
