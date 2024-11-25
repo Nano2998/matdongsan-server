@@ -5,7 +5,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.matdongsanserver.common.config.ChatGptConfig;
 import com.example.matdongsanserver.common.config.PromptsConfig;
-import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -68,6 +67,12 @@ public class StoryService {
     private final MemberRepository memberRepository;
 
     private final StoryLikeRepository storyLikeRepository;
+
+    private static final double TEMPERATURE = 0.9;
+
+    private static final double TTS_SPEED = 0.95;
+
+    private static final String GENERATE_COMMAND = "Generate text that faithfully fulfills the user's request.";
 
     /**
      * 동화 생성
@@ -180,7 +185,7 @@ public class StoryService {
             requestBody.put("model", ttsModel);
             requestBody.put("voice", ttsVoice);
             requestBody.put("input", story.getContent());
-            requestBody.put("speed", 0.95);
+            requestBody.put("speed", TTS_SPEED);
 
             ObjectMapper objectMapper = new ObjectMapper();
             String jsonBody = objectMapper.writeValueAsString(requestBody);
@@ -384,9 +389,9 @@ public class StoryService {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", aiModel);
             requestBody.put("max_tokens", maxTokens);
-            requestBody.put("temperature", 0.9);
+            requestBody.put("temperature", TEMPERATURE);
             requestBody.put("messages", new Object[]{
-                    Map.of("role", "system", "content", "Generate text that faithfully fulfills the user's request."),
+                    Map.of("role", "system", "content", GENERATE_COMMAND),
                     Map.of("role", "user", "content", prompt)
             });
 
