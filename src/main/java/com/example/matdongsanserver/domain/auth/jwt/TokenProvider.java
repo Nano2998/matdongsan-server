@@ -37,9 +37,9 @@ public class TokenProvider {
 
     private Key secretkey;
 
-    public TokenProvider(@Value("${jwt.secret_key}") String secretKey,
-                         @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityTime,
-                         @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityTime,
+    public TokenProvider(@Value("${spring.jwt.secret_key}") String secretKey,
+                         @Value("${spring.jwt.access-token-validity-in-seconds}") long accessTokenValidityTime,
+                         @Value("${spring.jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityTime,
                          RefreshTokenRepository refreshTokenRepository) {
         this.secretKey = secretKey;
         this.accessTokenValidityTime = accessTokenValidityTime * 1000;

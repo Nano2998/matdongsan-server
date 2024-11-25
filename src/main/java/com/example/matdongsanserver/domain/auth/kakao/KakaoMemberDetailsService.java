@@ -35,7 +35,6 @@ public class KakaoMemberDetailsService extends DefaultOAuth2UserService {
                                         .nickname(kakaoUserInfo.getNickname())
                                         .profileImage(kakaoUserInfo.getProfileImage())
                                         .role(Role.USER)
-                                        .isFirstLogin(true)
                                         .build()
                         )
                 );
