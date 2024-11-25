@@ -28,7 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private static final String REDIRECT_URI = "http://localhost:8080/api/sign/login/kakao?accessToken=%s&refreshToken=%s";
+    private static final String REDIRECT_URI = "http://localhost:8080/api/auth/login/kakao?accessToken=%s&refreshToken=%s";
     private final TokenProvider tokenProvider;
     private final MemberRepository memberRepository;
     private final RefreshTokenRepository refreshTokenRepository;

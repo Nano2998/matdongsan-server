@@ -84,6 +84,6 @@ public class JwtFilter extends OncePerRequestFilter {
         HttpSession session = request.getSession();
         session.setAttribute("accessToken", tokenDto.getAccessToken());
         session.setAttribute("refreshToken", tokenDto.getRefreshToken());
-        response.sendRedirect("/api/sign/reissue");
+        response.sendRedirect("/api/auth/reissue");
     }
 }

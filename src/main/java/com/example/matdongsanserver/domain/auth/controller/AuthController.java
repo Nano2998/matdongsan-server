@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/sign")
-public class SignController {
+@RequestMapping("/api/auth")
+public class AuthController {
 
     @GetMapping("/login/kakao")
     public ResponseEntity loginKakao(@RequestParam(name = "accessToken") String accessToken,

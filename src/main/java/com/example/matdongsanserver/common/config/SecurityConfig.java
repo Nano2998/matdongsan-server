@@ -58,8 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/login/oauth2/code/kakao").permitAll() // for Postman - redirect_uri
-                        .requestMatchers("/api/exception/**").permitAll()
-                        .requestMatchers("/api/sign/**").permitAll()
+                        .requestMatchers("/api/auth/exception/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
                         .anyRequest().authenticated()
                 );
