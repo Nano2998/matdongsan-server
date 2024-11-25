@@ -53,9 +53,6 @@ dependencies {
 
     implementation'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 
-    //헬스 체크
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
     //하드웨어 연결(mqtt)
     implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
 

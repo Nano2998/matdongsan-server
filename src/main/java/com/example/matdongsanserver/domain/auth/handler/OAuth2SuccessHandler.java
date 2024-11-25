@@ -44,7 +44,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         Member member = memberRepository.findByEmail(kakaoUserInfo.getEmail())
                 .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        TokenDto tokenDto = tokenProvider.createToken(member.getEmail(), member.getRole().name());
+        TokenDto tokenDto = tokenProvider.createToken(member.getId(), member.getRole().name());
 
         saveRefreshTokenOnRedis(member, tokenDto);
         String redirectURI = String.format(REDIRECT_URI, tokenDto.getAccessToken(), tokenDto.getRefreshToken());
@@ -55,7 +55,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         List<SimpleGrantedAuthority> simpleGrantedAuthorities = new ArrayList<>();
         simpleGrantedAuthorities.add(new SimpleGrantedAuthority(member.getRole().name()));
         refreshTokenRepository.save(RefreshToken.builder()
-                .id(member.getEmail())
+                .id(member.getId())
                 .authorities(simpleGrantedAuthorities)
                 .refreshToken(tokenDto.getRefreshToken())
                 .build());

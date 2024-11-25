@@ -1,5 +1,8 @@
 package com.example.matdongsanserver.domain.auth.handler;
 
+import com.example.matdongsanserver.common.exception.ErrorResponse;
+import com.example.matdongsanserver.domain.auth.exception.AuthErrorCode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,9 +14,16 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFailEntryPoint implements AuthenticationEntryPoint {
-    private static final String EXCEPTION_ENTRY_POINT = "/api/exception/entry-point";
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        response.sendRedirect(EXCEPTION_ENTRY_POINT);
+        response.setContentType("application/json; charset=UTF-8");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+        ErrorResponse errorResponse = ErrorResponse.of(AuthErrorCode.LOGIN_REQUIRED);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+
+        response.getWriter().write(jsonResponse);
     }
 }

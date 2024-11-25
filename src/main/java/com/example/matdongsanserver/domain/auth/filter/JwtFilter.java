@@ -1,7 +1,10 @@
 package com.example.matdongsanserver.domain.auth.filter;
 
+import com.example.matdongsanserver.common.exception.ErrorResponse;
+import com.example.matdongsanserver.domain.auth.exception.AuthErrorCode;
 import com.example.matdongsanserver.domain.auth.jwt.TokenDto;
 import com.example.matdongsanserver.domain.auth.jwt.TokenProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +26,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private static final String ACCESS_HEADER = "AccessToken";
     private static final String REFRESH_HEADER = "RefreshToken";
-    private static final String EXCEPTION_ACCESS_HANDLER = "/api/exception/refresh-token-expired";
 
     private final TokenProvider tokenProvider;
 
@@ -31,10 +33,6 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain
     ) throws IOException, ServletException {
-        if (isRequestPassURI(request)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
         String accessToken = getTokenFromHeader(request, ACCESS_HEADER);
 
@@ -46,7 +44,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
                 if (StringUtils.hasText(refreshToken) && tokenProvider.validateToken(refreshToken)) {
                     if (tokenProvider.validateExpire(refreshToken)) {
-                        TokenDto tokenDto = tokenProvider.reIssueAccessToken(refreshToken);
+                        TokenDto tokenDto = tokenProvider.reissueAccessToken(refreshToken);
                         SecurityContextHolder.getContext()
                                 .setAuthentication(tokenProvider.getAuthentication(tokenDto.getAccessToken()));
 
@@ -54,20 +52,21 @@ public class JwtFilter extends OncePerRequestFilter {
                         return;
                     } else {
                         //리프레시 토큰 만료
-                        response.sendRedirect(EXCEPTION_ACCESS_HANDLER);
+                        response.setContentType("application/json; charset=UTF-8");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+                        ErrorResponse errorResponse = ErrorResponse.of(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+
+                        response.getWriter().write(jsonResponse);
                     }
                 }
             }
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private static boolean isRequestPassURI(HttpServletRequest request) {
-        return request.getRequestURI().equals("/") ||
-                request.getRequestURI().startsWith("/api/auth") ||
-                request.getRequestURI().startsWith("/api/exception") ||
-                request.getRequestURI().startsWith("/favicon.ico");
     }
 
     private String getTokenFromHeader(HttpServletRequest request, String header) {
