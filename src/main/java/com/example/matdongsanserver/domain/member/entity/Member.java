@@ -56,4 +56,11 @@ public class Member extends BaseTimeEntity {
     public void addFollower(Follow follow) {
         this.followerList.add(follow);
     }
+
+    /**
+     * children이 비어있는지 검사하는 메서드
+     */
+    public boolean hasNoChildren() {
+        return children.isEmpty();
+    }
 }

@@ -1,25 +1,28 @@
 package com.example.matdongsanserver.domain.auth.controller;
 
-import com.example.matdongsanserver.domain.auth.jwt.TokenDto;
+import com.example.matdongsanserver.domain.auth.dto.LoginResponse;
+import com.example.matdongsanserver.domain.auth.dto.TokenResponse;
+import com.example.matdongsanserver.domain.auth.service.AuthService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @GetMapping("/login/kakao")
-    public ResponseEntity loginKakao(@RequestParam(name = "accessToken") String accessToken,
-                                     @RequestParam(name = "refreshToken") String refreshToken) {
-        return new ResponseEntity(TokenDto.of(accessToken, refreshToken), HttpStatus.OK);
+    private final AuthService authService;
+
+    @PostMapping("/login/kakao/code")
+    public ResponseEntity<LoginResponse> loginKakao(@RequestParam(name = "code") String code)
+            throws JsonProcessingException {
+        return ResponseEntity.ok()
+                .body(authService.kakaoLogin(code));
     }
 
     /**
@@ -31,6 +34,6 @@ public class AuthController {
         String accessToken = (String) session.getAttribute("accessToken");
         String refreshToken = (String) session.getAttribute("refreshToken");
 
-        return new ResponseEntity(new TokenDto(accessToken, refreshToken), HttpStatus.OK);
+        return new ResponseEntity(new TokenResponse(accessToken, refreshToken), HttpStatus.OK);
     }
 }

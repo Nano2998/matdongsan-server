@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.domain.auth.jwt;
 
+import com.example.matdongsanserver.domain.auth.dto.TokenResponse;
 import com.example.matdongsanserver.domain.auth.kakao.KakaoMemberDetails;
 import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshToken;
 import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshTokenRepository;
@@ -57,7 +58,7 @@ public class TokenProvider {
     /**
      * access, refresh Token 생성
      */
-    public TokenDto createToken(Long memberId, String email, String role) {
+    public TokenResponse createToken(Long memberId, String email, String role) {
         long now = (new Date()).getTime();
 
         Date accessValidity = new Date(now + this.accessTokenValidityTime);
@@ -79,7 +80,7 @@ public class TokenProvider {
                 .setExpiration(refreshValidity)
                 .compact();
 
-        return TokenDto.of(accessToken, refreshToken);
+        return TokenResponse.of(accessToken, refreshToken);
     }
 
     /**
@@ -148,17 +149,17 @@ public class TokenProvider {
      * 토큰 재발급
      */
     @Transactional
-    public TokenDto reissueAccessToken(String refreshToken) {
+    public TokenResponse reissueAccessToken(String refreshToken) {
         RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken);
 
-        TokenDto tokenDto = createToken(findToken.getId(), findToken.getEmail(), findToken.getAuthority());
+        TokenResponse tokenResponse = createToken(findToken.getId(), findToken.getEmail(), findToken.getAuthority());
         refreshTokenRepository.save(RefreshToken.builder()
                 .id(findToken.getId())
                 .email(findToken.getEmail())
                 .authorities(findToken.getAuthorities())
-                .refreshToken(tokenDto.getRefreshToken())
+                .refreshToken(tokenResponse.getRefreshToken())
                 .build());
 
-        return tokenDto;
+        return tokenResponse;
     }
 }

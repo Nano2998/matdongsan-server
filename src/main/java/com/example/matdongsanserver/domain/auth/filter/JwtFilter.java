@@ -2,7 +2,7 @@ package com.example.matdongsanserver.domain.auth.filter;
 
 import com.example.matdongsanserver.common.exception.ErrorResponse;
 import com.example.matdongsanserver.domain.auth.exception.AuthErrorCode;
-import com.example.matdongsanserver.domain.auth.jwt.TokenDto;
+import com.example.matdongsanserver.domain.auth.dto.TokenResponse;
 import com.example.matdongsanserver.domain.auth.jwt.TokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -44,11 +44,11 @@ public class JwtFilter extends OncePerRequestFilter {
                 String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
                 if (StringUtils.hasText(refreshToken) && tokenProvider.validateToken(refreshToken)) {
                     if (tokenProvider.validateExpire(refreshToken)) {
-                        TokenDto tokenDto = tokenProvider.reissueAccessToken(refreshToken);
+                        TokenResponse tokenResponse = tokenProvider.reissueAccessToken(refreshToken);
                         SecurityContextHolder.getContext()
-                                .setAuthentication(tokenProvider.getAuthentication(tokenDto.getAccessToken()));
+                                .setAuthentication(tokenProvider.getAuthentication(tokenResponse.getAccessToken()));
 
-                        redirectReissueURI(request, response, tokenDto);
+                        redirectReissueURI(request, response, tokenResponse);
                         return;
                     } else {
                         //리프레시 토큰 만료
@@ -78,11 +78,11 @@ public class JwtFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private static void redirectReissueURI(HttpServletRequest request, HttpServletResponse response, TokenDto tokenDto)
+    private static void redirectReissueURI(HttpServletRequest request, HttpServletResponse response, TokenResponse tokenResponse)
             throws IOException {
         HttpSession session = request.getSession();
-        session.setAttribute("accessToken", tokenDto.getAccessToken());
-        session.setAttribute("refreshToken", tokenDto.getRefreshToken());
+        session.setAttribute("accessToken", tokenResponse.getAccessToken());
+        session.setAttribute("refreshToken", tokenResponse.getRefreshToken());
         response.sendRedirect("/api/auth/reissue");
     }
 }
