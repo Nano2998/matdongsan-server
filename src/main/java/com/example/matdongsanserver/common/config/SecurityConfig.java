@@ -6,6 +6,7 @@ import com.example.matdongsanserver.domain.auth.handler.JwtAuthenticationFailEnt
 import com.example.matdongsanserver.domain.auth.handler.OAuth2SuccessHandler;
 import com.example.matdongsanserver.domain.auth.kakao.KakaoMemberDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
@@ -46,11 +48,14 @@ public class SecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring()
-                .requestMatchers( "/css/**", "/images/**", "/js/**", "/favicon.ico", "/fonts/**", " /assets/**", "/error",
-                        "/api/swagger-ui.html",
-                        "/api/swagger-ui/**",
-                        "/api/swagger-resources/**",
-                        "/api/health");
+                .requestMatchers( "/css/**",
+                        "/images/**",
+                        "/js/**",
+                        "/favicon.ico",
+                        "/fonts/**",
+                        " /assets/**",
+                        "/error"
+                        );
     }
 
     @Bean
@@ -75,9 +80,15 @@ public class SecurityConfig {
                 });
         http
                 .authorizeHttpRequests((auth) -> auth
+                        .requestMatchers("/").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/login/oauth2/code/kakao").permitAll() // for Postman - redirect_uri
                         .requestMatchers("/api/auth/exception/**").permitAll()
+                        .requestMatchers("/api/swagger-ui.html").permitAll()
+                        .requestMatchers("/api/swagger-ui/**").permitAll()
+                        .requestMatchers("/api/swagger-resources/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/health").permitAll()
                         .anyRequest().authenticated()
                 );
         http

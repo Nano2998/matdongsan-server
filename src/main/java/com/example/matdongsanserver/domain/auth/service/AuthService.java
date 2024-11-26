@@ -42,7 +42,10 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
-    private String kakaoClientId;
+    private String clientId;
+
+    @Value("${spring.security.oauth2.client.registration.kakao.client-secret}")
+    private String clientSecret;
 
     @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
     private String redirectUri;
@@ -56,6 +59,7 @@ public class AuthService {
     @Transactional
     public LoginResponse kakaoLogin(final String code) throws JsonProcessingException {
         String token = getToken(code);
+        System.out.println(token);
         KakaoLoginRequest request = getKakaoUserInfo(token);
 
         Member member = memberRepository.findByEmail(request.getEmail())
@@ -103,7 +107,8 @@ public class AuthService {
         // HTTP 바디 생성
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "authorization_code");
-        body.add("client_id", kakaoClientId);
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
         body.add("redirect_uri", redirectUri);
         body.add("code", code);
 
