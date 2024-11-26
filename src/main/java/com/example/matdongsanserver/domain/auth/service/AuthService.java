@@ -1,6 +1,7 @@
 package com.example.matdongsanserver.domain.auth.service;
 
 import com.example.matdongsanserver.domain.auth.dto.KakaoLoginRequest;
+import com.example.matdongsanserver.domain.auth.dto.LoginRequest;
 import com.example.matdongsanserver.domain.auth.dto.LoginResponse;
 import com.example.matdongsanserver.domain.auth.exception.AuthErrorCode;
 import com.example.matdongsanserver.domain.auth.exception.AuthException;
@@ -31,6 +32,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -51,55 +53,12 @@ public class AuthService {
     private String redirectUri;
 
     /**
-     * 인증 코드를 통해서 로그인을 수행하는 로직
-     * @param code
-     * @return LoginResponse
-     * @throws JsonProcessingException
-     */
-    @Transactional
-    public LoginResponse kakaoLogin(final String code) throws JsonProcessingException {
-        String token = getToken(code);
-        System.out.println(token);
-        KakaoLoginRequest request = getKakaoUserInfo(token);
-
-        Member member = memberRepository.findByEmail(request.getEmail())
-                .orElseGet(() ->
-                        memberRepository.save(
-                                Member.builder()
-                                        .email(request.getEmail())
-                                        .nickname(request.getNickname())
-                                        .profileImage(request.getProfileImage())
-                                        .role(Role.USER)
-                                        .build()
-                        )
-                );
-
-        TokenResponse tokenResponse = tokenProvider.createToken(member.getId(), member.getEmail(), member.getRole().name());
-
-        List<SimpleGrantedAuthority> simpleGrantedAuthorities = new ArrayList<>();
-        simpleGrantedAuthorities.add(new SimpleGrantedAuthority(member.getRole().name()));
-
-        refreshTokenRepository.save(RefreshToken.builder()
-                .id(member.getId())
-                .email(member.getEmail())
-                .authorities(simpleGrantedAuthorities)
-                .refreshToken(tokenResponse.getRefreshToken())
-                .build());
-
-        if (member.hasNoChildren()) {
-            return LoginResponse.of(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken(), true);
-        }
-
-        return LoginResponse.of(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken(), false);
-    }
-
-    /**
-     * 인증 서버로부터 인증 코드를 통해서 access 토큰을 받아오는 로직
+     * 인증 서버로부터 인증 코드를 통해서 access 토큰을 받아오는 로직 (테스트용)
      * @param code
      * @return access 토큰
      * @throws JsonProcessingException
      */
-    private String getToken(final String code) throws JsonProcessingException {
+    public String getToken(final String code) throws JsonProcessingException {
         // HTTP 헤더 생성
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
@@ -132,6 +91,50 @@ public class AuthService {
     }
 
     /**
+     * 인증 코드를 통해서 로그인을 수행하는 로직
+     * @param loginRequest
+     * @return LoginResponse
+     * @throws JsonProcessingException
+     */
+    @Transactional
+    public LoginResponse kakaoLogin(LoginRequest loginRequest) throws JsonProcessingException {
+        KakaoLoginRequest request = getKakaoUserInfo(loginRequest.getToken());
+        if (!Objects.equals(request.getEmail(), loginRequest.getEmail())) {
+            throw new AuthException(AuthErrorCode.INVALID_LOGIN_REQUEST);
+        }
+
+        Member member = memberRepository.findByEmail(request.getEmail())
+                .orElseGet(() ->
+                        memberRepository.save(
+                                Member.builder()
+                                        .email(request.getEmail())
+                                        .profileImage(null)
+                                        .nickname(null)
+                                        .role(Role.USER)
+                                        .build()
+                        )
+                );
+
+        TokenResponse tokenResponse = tokenProvider.createToken(member.getId(), member.getEmail(), member.getRole().name());
+
+        List<SimpleGrantedAuthority> simpleGrantedAuthorities = new ArrayList<>();
+        simpleGrantedAuthorities.add(new SimpleGrantedAuthority(member.getRole().name()));
+
+        refreshTokenRepository.save(RefreshToken.builder()
+                .id(member.getId())
+                .email(member.getEmail())
+                .authorities(simpleGrantedAuthorities)
+                .refreshToken(tokenResponse.getRefreshToken())
+                .build());
+
+        return LoginResponse.builder()
+                .accessToken(tokenResponse.getAccessToken())
+                .refreshToken(tokenResponse.getRefreshToken())
+                .isFirstLogin(member.isFirstLogin())
+                .build();
+    }
+
+    /**
      * 인증 서버로부터 access 토큰을 통해서 사용자 정보를 받아오는 로직
      * @param token
      * @return KakaoLoginRequest
@@ -157,14 +160,14 @@ public class AuthService {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(responseBody);
 
-            // 이메일, 닉네임, 프로필 이미지 추출
+            // 이메일, 닉네임, 프로필 이미지 추출 (닉네임, 이미지는 추후 포함을 고려)
             String email = jsonNode.get("kakao_account").get("email").asText();
-            String nickname = jsonNode.get("kakao_account").get("profile").get("nickname").asText();
-            String profileImage = jsonNode.get("kakao_account").get("profile").get("profile_image_url").asText();
+//            String nickname = jsonNode.get("kakao_account").get("profile").get("nickname").asText();
+//            String profileImage = jsonNode.get("kakao_account").get("profile").get("profile_image_url").asText();
 
-            return new KakaoLoginRequest(email, nickname, profileImage);
+            return new KakaoLoginRequest(email);
         } catch (HttpClientErrorException e) {
-            throw new AuthException(AuthErrorCode.LOGIN_FAILED);
+            throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
     }
 }

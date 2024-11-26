@@ -3,10 +3,9 @@ package com.example.matdongsanserver.common.config;
 import com.example.matdongsanserver.domain.auth.filter.JwtFilter;
 import com.example.matdongsanserver.domain.auth.handler.JwtAccessDeniedHandler;
 import com.example.matdongsanserver.domain.auth.handler.JwtAuthenticationFailEntryPoint;
-import com.example.matdongsanserver.domain.auth.handler.OAuth2SuccessHandler;
+//import com.example.matdongsanserver.domain.auth.handler.OAuth2SuccessHandler;
 import com.example.matdongsanserver.domain.auth.kakao.KakaoMemberDetailsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,7 +28,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final KakaoMemberDetailsService kakaoMemberDetailsService;
-    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+//    private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final JwtFilter customJwtFilter;
     private final JwtAuthenticationFailEntryPoint jwtAuthenticationFailEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
@@ -76,14 +75,11 @@ public class SecurityConfig {
                 .oauth2Login(oAuth2Login -> {
                     oAuth2Login.userInfoEndpoint(userInfoEndpointConfig ->
                     userInfoEndpointConfig.userService(kakaoMemberDetailsService));
-                    oAuth2Login.successHandler(oAuth2SuccessHandler);
                 });
         http
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/login/oauth2/code/kakao").permitAll() // for Postman - redirect_uri
-                        .requestMatchers("/api/auth/exception/**").permitAll()
                         .requestMatchers("/api/swagger-ui.html").permitAll()
                         .requestMatchers("/api/swagger-ui/**").permitAll()
                         .requestMatchers("/api/swagger-resources/**").permitAll()

@@ -1,9 +1,11 @@
 package com.example.matdongsanserver.domain.auth.controller;
 
+import com.example.matdongsanserver.domain.auth.dto.LoginRequest;
 import com.example.matdongsanserver.domain.auth.dto.LoginResponse;
 import com.example.matdongsanserver.domain.auth.dto.TokenResponse;
 import com.example.matdongsanserver.domain.auth.service.AuthService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +20,20 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @GetMapping("/login/kakao")
-    public ResponseEntity<LoginResponse> loginKakao(@RequestParam(name = "code") String code)
+    @Operation(summary = "인증 코드를 통해 카카오 토큰 반환 (테스트용)")
+    @GetMapping("/kakao/token")
+    public ResponseEntity<String> getKakaoToken(@RequestParam(name = "code") String code)
             throws JsonProcessingException {
         return ResponseEntity.ok()
-                .body(authService.kakaoLogin(code));
+                .body(authService.getToken(code));
+    }
+
+    @Operation(summary = "카카오 토큰과 이메일을 통해서 로그인 수행 (처음 로그인일 경우 회원을 생성)")
+    @PostMapping("/kakao/login")
+    public ResponseEntity<LoginResponse> loginKakao(@RequestBody LoginRequest loginRequest)
+            throws JsonProcessingException {
+        return ResponseEntity.ok()
+                .body(authService.kakaoLogin(loginRequest));
     }
 
     /**

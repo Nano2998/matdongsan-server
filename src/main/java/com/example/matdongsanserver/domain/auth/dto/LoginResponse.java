@@ -1,18 +1,22 @@
 package com.example.matdongsanserver.domain.auth.dto;
 
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
-public class LoginResponse extends TokenResponse {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class LoginResponse{
 
-    private final boolean hasNoChildren;
+    private String accessToken;
+    private String refreshToken;
+    private boolean isFirstLogin;
 
-    private LoginResponse(final String accessToken, final String refreshToken, boolean hasNoChildren) {
-        super(accessToken, refreshToken);
-        this.hasNoChildren = hasNoChildren;
-    }
-
-    public static LoginResponse of(final String accessToken, final String refreshToken, final boolean hasNoChildren) {
-        return new LoginResponse(accessToken, refreshToken, hasNoChildren);
+    @Builder
+    public LoginResponse(String accessToken, String refreshToken, boolean isFirstLogin) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.isFirstLogin = isFirstLogin;
     }
 }

@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-public class KakaoLoginRequest {
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+public class LoginRequest {
+    private String token;
     private String email;
 }

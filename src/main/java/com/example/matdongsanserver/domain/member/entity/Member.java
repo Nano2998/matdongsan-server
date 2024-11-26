@@ -3,6 +3,7 @@ package com.example.matdongsanserver.domain.member.entity;
 import com.example.matdongsanserver.common.model.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,10 +58,8 @@ public class Member extends BaseTimeEntity {
         this.followerList.add(follow);
     }
 
-    /**
-     * children이 비어있는지 검사하는 메서드
-     */
-    public boolean hasNoChildren() {
-        return children.isEmpty();
+    // 닉네임이 없거나 자녀정보가 없을 때
+    public boolean isFirstLogin() {
+        return !StringUtils.hasText(nickname) || children.isEmpty();
     }
 }
