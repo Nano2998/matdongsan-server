@@ -27,8 +27,9 @@ import java.util.stream.Collectors;
 @Component
 public class TokenProvider {
 
+    private static final String AUTH_ID = "ID";
     private static final String AUTH_KEY = "AUTHORITY";
-    private static final String AUTH_MEMBER_ID = "MEMBER_ID";
+    private static final String AUTH_EMAIL = "EMAIL";
 
     private final String secretKey;
     private final long accessTokenValidityTime;
@@ -56,21 +57,23 @@ public class TokenProvider {
     /**
      * access, refresh Token 생성
      */
-    public TokenDto createToken(Long memberId, String role) {
+    public TokenDto createToken(Long memberId, String email, String role) {
         long now = (new Date()).getTime();
 
         Date accessValidity = new Date(now + this.accessTokenValidityTime);
         Date refreshValidity = new Date(now + this.refreshTokenValidityTime);
 
         String accessToken = Jwts.builder()
-                .addClaims(Map.of(AUTH_MEMBER_ID, memberId))
+                .addClaims(Map.of(AUTH_ID, memberId))
+                .addClaims(Map.of(AUTH_EMAIL, email))
                 .addClaims(Map.of(AUTH_KEY, role))
                 .signWith(secretkey, SignatureAlgorithm.HS256)
                 .setExpiration(accessValidity)
                 .compact();
 
         String refreshToken = Jwts.builder()
-                .addClaims(Map.of(AUTH_MEMBER_ID, memberId))
+                .addClaims(Map.of(AUTH_ID, memberId))
+                .addClaims(Map.of(AUTH_EMAIL, email))
                 .addClaims(Map.of(AUTH_KEY, role))
                 .signWith(secretkey, SignatureAlgorithm.HS256)
                 .setExpiration(refreshValidity)
@@ -134,7 +137,8 @@ public class TokenProvider {
                 .collect(Collectors.toList());
 
         KakaoMemberDetails principal = new KakaoMemberDetails(
-                (String) claims.get(AUTH_MEMBER_ID),
+                (Long) claims.get(AUTH_ID),
+                (String) claims.get(AUTH_EMAIL),
                 simpleGrantedAuthorities, Map.of());
 
         return new UsernamePasswordAuthenticationToken(principal, token, simpleGrantedAuthorities);
@@ -147,9 +151,10 @@ public class TokenProvider {
     public TokenDto reissueAccessToken(String refreshToken) {
         RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken);
 
-        TokenDto tokenDto = createToken(findToken.getId(), findToken.getAuthority());
+        TokenDto tokenDto = createToken(findToken.getId(), findToken.getEmail(), findToken.getAuthority());
         refreshTokenRepository.save(RefreshToken.builder()
                 .id(findToken.getId())
+                .email(findToken.getEmail())
                 .authorities(findToken.getAuthorities())
                 .refreshToken(tokenDto.getRefreshToken())
                 .build());
