@@ -96,25 +96,8 @@ public class TokenProvider {
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (SecurityException | MalformedJwtException | IllegalArgumentException | UnsupportedJwtException e) {
-            return false;
-        }
-    }
-
-    /**
-     * 토큰이 만료되었는지 검사
-     */
-    public boolean validateExpire(String token) {
-        if (!StringUtils.hasText(token)) {
-            return false;
-        }
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        } catch (ExpiredJwtException e) {
+        } catch (SecurityException | MalformedJwtException | IllegalArgumentException | UnsupportedJwtException |
+                 ExpiredJwtException e) {
             return false;
         }
     }
@@ -134,32 +117,17 @@ public class TokenProvider {
                 .split(","));
 
         List<? extends GrantedAuthority> simpleGrantedAuthorities = authorities.stream()
-                .map(auth -> new SimpleGrantedAuthority(auth))
+                .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
+        Number authIdNumber = (Number) claims.get(AUTH_ID);
         KakaoMemberDetails principal = new KakaoMemberDetails(
-                (Long) claims.get(AUTH_ID),
+                authIdNumber.longValue(),
                 (String) claims.get(AUTH_EMAIL),
-                simpleGrantedAuthorities, Map.of());
+                simpleGrantedAuthorities,
+                Map.of()
+        );
 
         return new UsernamePasswordAuthenticationToken(principal, token, simpleGrantedAuthorities);
-    }
-
-    /**
-     * 토큰 재발급
-     */
-    @Transactional
-    public TokenResponse reissueAccessToken(String refreshToken) {
-        RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken);
-
-        TokenResponse tokenResponse = createToken(findToken.getId(), findToken.getEmail(), findToken.getAuthority());
-        refreshTokenRepository.save(RefreshToken.builder()
-                .id(findToken.getId())
-                .email(findToken.getEmail())
-                .authorities(findToken.getAuthorities())
-                .refreshToken(tokenResponse.getRefreshToken())
-                .build());
-
-        return tokenResponse;
     }
 }

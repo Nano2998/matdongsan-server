@@ -36,15 +36,10 @@ public class AuthController {
                 .body(authService.kakaoLogin(loginRequest));
     }
 
-    /**
-     * 액세스 토큰 재발급 API
-     */
+    @Operation(summary = "리프레쉬 토큰을 통해 에세스 토큰 및 리프레쉬 토큰 재발급")
     @GetMapping("/reissue")
-    public ResponseEntity reissueToken(HttpServletRequest request) {
-        HttpSession session = request.getSession();
-        String accessToken = (String) session.getAttribute("accessToken");
-        String refreshToken = (String) session.getAttribute("refreshToken");
-
-        return new ResponseEntity(new TokenResponse(accessToken, refreshToken), HttpStatus.OK);
+    public ResponseEntity<TokenResponse> reissueToken(HttpServletRequest request) {
+        return ResponseEntity.ok()
+                .body(authService.reissueAccessToken(request));
     }
 }

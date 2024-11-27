@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.domain.auth.service;
 
+import com.example.matdongsanserver.common.exception.ErrorResponse;
 import com.example.matdongsanserver.domain.auth.dto.KakaoLoginRequest;
 import com.example.matdongsanserver.domain.auth.dto.LoginRequest;
 import com.example.matdongsanserver.domain.auth.dto.LoginResponse;
@@ -15,6 +16,8 @@ import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,10 +26,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -51,6 +56,8 @@ public class AuthService {
 
     @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
     private String redirectUri;
+
+    private static final String REFRESH_HEADER = "RefreshToken";
 
     /**
      * 인증 서버로부터 인증 코드를 통해서 access 토큰을 받아오는 로직 (테스트용)
@@ -169,5 +176,42 @@ public class AuthService {
         } catch (HttpClientErrorException e) {
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
+    }
+
+    @Transactional
+    public TokenResponse reissueAccessToken(final HttpServletRequest request) {
+        String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
+
+        if (!tokenProvider.validateToken(refreshToken)) {
+            throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+
+        RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED));
+
+        TokenResponse tokenResponse = tokenProvider.createToken(
+                findToken.getId(),
+                findToken.getEmail(),
+                findToken.getAuthority());
+
+        refreshTokenRepository.save(RefreshToken.builder()
+                .id(findToken.getId())
+                .email(findToken.getEmail())
+                .authorities(findToken.getAuthorities())
+                .refreshToken(tokenResponse.getRefreshToken())
+                .build());
+
+        SecurityContextHolder.getContext()
+                .setAuthentication(tokenProvider.getAuthentication(tokenResponse.getAccessToken()));
+
+        return tokenResponse;
+    }
+
+    private String getTokenFromHeader(final HttpServletRequest request, final String headerName) {
+        String token = request.getHeader(headerName);
+        if (StringUtils.hasText(token)) {
+            return token;
+        }
+        return null;
     }
 }
