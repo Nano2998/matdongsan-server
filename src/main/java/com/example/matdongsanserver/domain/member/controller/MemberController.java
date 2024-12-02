@@ -19,7 +19,7 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @Operation(summary = "회원가입 후 회원 정보 업데이트")
+    @Operation(summary = "회원가입 이후 닉네임 및 프로필 이미지 등록")
     @PostMapping("/{memberId}")
     public ResponseEntity<MemberDto.MemberDetail> updateMember(
             @PathVariable Long memberId,

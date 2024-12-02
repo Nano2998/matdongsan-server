@@ -22,7 +22,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
-    private static final String ACCESS_HEADER = "AccessToken";
+    private static final String ACCESS_HEADER = "accessToken";
 
     private final TokenProvider tokenProvider;
 

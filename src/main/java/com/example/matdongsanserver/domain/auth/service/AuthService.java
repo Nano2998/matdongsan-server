@@ -54,7 +54,7 @@ public class AuthService {
     @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
     private String redirectUri;
 
-    private static final String REFRESH_HEADER = "RefreshToken";
+    private static final String REFRESH_HEADER = "refreshToken";
     private static final String KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
     private static final String KAKAO_USER_INFO_URL = "https://kapi.kakao.com/v2/user/me";
 

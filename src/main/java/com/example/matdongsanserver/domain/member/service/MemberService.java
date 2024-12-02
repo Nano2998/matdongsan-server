@@ -44,7 +44,7 @@ public class MemberService {
     private final AmazonS3 amazonS3;
 
     /**
-     * 회원가입 후에 회원 정보 업데이트 로직
+     * 회원가입 이후 닉네임 및 프로필 이미지 등록 로직
      */
     @Transactional
     public MemberDto.MemberDetail updateMember(Long memberId, MemberDto.MemberCreationRequest memberCreationRequest) {
