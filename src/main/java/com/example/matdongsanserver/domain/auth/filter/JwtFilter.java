@@ -46,11 +46,11 @@ public class JwtFilter extends OncePerRequestFilter {
                 if (tokenProvider.validateTokenExpired(accessToken)) {
                     SecurityContextHolder.getContext().setAuthentication(tokenProvider.getAuthentication(accessToken));
                 } else {
-                    handleAccessTokenExpired(response);
+                    handleAccessTokenExpired(request, response);
                     return;
                 }
             } else {
-                handleInvalidToken(response);
+                handleInvalidToken(request, response);
                 return;
             }
         } else {
@@ -72,7 +72,9 @@ public class JwtFilter extends OncePerRequestFilter {
     /**
      * 에세스 토큰 만료시에 401 응답 반환
      */
-    private void handleAccessTokenExpired(HttpServletResponse response) throws IOException {
+    private void handleAccessTokenExpired(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        logWarning(request, "Access token expired.");
+
         response.setContentType("application/json; charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
@@ -88,7 +90,9 @@ public class JwtFilter extends OncePerRequestFilter {
     /**
      * 잘못된 형식의 토큰일 때
      */
-    private void handleInvalidToken(HttpServletResponse response) throws IOException {
+    private void handleInvalidToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        logWarning(request, "Invalid access token.");
+
         response.setContentType("application/json; charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
@@ -99,5 +103,16 @@ public class JwtFilter extends OncePerRequestFilter {
 
         response.getWriter().write(jsonResponse);
         response.getWriter().flush();
+    }
+
+    /**
+     * 경고 로그를 기록하는 공통 메서드
+     */
+    private void logWarning(HttpServletRequest request, String message) {
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+        String clientIP = request.getRemoteAddr();
+
+        log.warn("{} Method: {}, URI: {}, Client IP: {}", message, method, requestURI, clientIP);
     }
 }

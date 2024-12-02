@@ -15,8 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,6 +35,7 @@ public class ModuleService {
     public void init() throws MqttException {
         this.client = new MqttClient(brokerAddress, MqttClient.generateClientId());
         this.client.connect();
+        log.info("Init MQTT broker");
     }
 
     @Transactional

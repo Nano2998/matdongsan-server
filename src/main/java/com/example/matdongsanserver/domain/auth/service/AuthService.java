@@ -62,14 +62,17 @@ public class AuthService {
      * 인증 서버로부터 인증 코드를 통해 access 토큰을 받아오는 로직
      */
     public String getToken(final String code) throws JsonProcessingException {
+        log.info("Attempting to retrieve Kakao access token for code: {}", code);
         HttpEntity<MultiValueMap<String, String>> request = buildKakaoTokenRequest(code);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
                     KAKAO_TOKEN_URL, HttpMethod.POST, request, String.class);
 
+            log.info("Successfully retrieved Kakao access token.");
             return parseJsonNode(response.getBody()).get("access_token").asText();
         } catch (HttpClientErrorException e) {
+            log.error("Failed to retrieve Kakao access token: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
     }
@@ -79,14 +82,18 @@ public class AuthService {
      */
     @Transactional
     public LoginResponse kakaoLogin(LoginRequest loginRequest) throws JsonProcessingException {
+        log.info("Processing Kakao login for token.");
         String email = getKakaoUserEmail(loginRequest.getToken());
         validateLoginRequest(email, loginRequest.getEmail());
 
         Member member = findOrCreateMember(email);
+        log.info("Member retrieved or created. memberId={}, email={}", member.getId(), member.getEmail());
+
         TokenResponse tokenResponse = tokenProvider.createToken(
                 member.getId(), member.getEmail(), member.getRole().name());
 
         saveRefreshToken(member, tokenResponse.getRefreshToken());
+        log.info("Token created for memberId: {}", member.getId());
 
         return LoginResponse.builder()
                 .accessToken(tokenResponse.getAccessToken())
@@ -100,15 +107,20 @@ public class AuthService {
      */
     @Transactional
     public TokenResponse reissueAccessToken(final HttpServletRequest request) {
+        log.info("Reissuing access and refresh tokens.");
         String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
 
         validateRefreshToken(refreshToken);
 
         RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED));
+                .orElseThrow(() -> {
+                    log.warn("Refresh token has expired.");
+                    return new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+                });
 
         TokenResponse tokenResponse = tokenProvider.createToken(
                 findToken.getId(), findToken.getEmail(), findToken.getAuthority());
+        log.info("New tokens created for memberId: {}", findToken.getId());
 
         updateRefreshToken(findToken, tokenResponse.getRefreshToken());
 
@@ -122,15 +134,18 @@ public class AuthService {
      * 카카오 서버에서 사용자 이메일 정보를 가져옴
      */
     private String getKakaoUserEmail(final String token) throws JsonProcessingException {
+        log.info("Retrieving Kakao user email.");
         HttpEntity<MultiValueMap<String, String>> request = buildKakaoUserInfoRequest(token);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
                     KAKAO_USER_INFO_URL, HttpMethod.POST, request, String.class);
 
+            log.info("Successfully retrieved Kakao user email.");
             return parseJsonNode(response.getBody())
                     .get("kakao_account").get("email").asText();
         } catch (HttpClientErrorException e) {
+            log.error("Failed to retrieve Kakao user email: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
     }
@@ -140,9 +155,11 @@ public class AuthService {
      */
     private void validateRefreshToken(String refreshToken) {
         if (!StringUtils.hasText(refreshToken) || !tokenProvider.validateToken(refreshToken)) {
+            log.warn("Invalid or empty refresh token.");
             throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
         if (!tokenProvider.validateTokenExpired(refreshToken)) {
+            log.warn("Refresh token has expired.");
             throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
     }
@@ -153,6 +170,7 @@ public class AuthService {
     private String getTokenFromHeader(final HttpServletRequest request, final String headerName) {
         String token = request.getHeader(headerName);
         if (!StringUtils.hasText(token)) {
+            log.warn("No token found in header: {}", headerName);
             throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
         return token;
@@ -163,6 +181,7 @@ public class AuthService {
      */
     private void validateLoginRequest(String actualEmail, String expectedEmail) {
         if (!Objects.equals(actualEmail, expectedEmail)) {
+            log.warn("Email mismatch during login request. expected={}, actual={}", expectedEmail, actualEmail);
             throw new AuthException(AuthErrorCode.INVALID_LOGIN_REQUEST);
         }
     }
