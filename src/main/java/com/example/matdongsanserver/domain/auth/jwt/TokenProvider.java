@@ -2,8 +2,6 @@ package com.example.matdongsanserver.domain.auth.jwt;
 
 import com.example.matdongsanserver.domain.auth.dto.TokenResponse;
 import com.example.matdongsanserver.domain.auth.kakao.KakaoMemberDetails;
-import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshToken;
-import com.example.matdongsanserver.domain.auth.jwt.redis.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -15,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.security.Key;
@@ -35,18 +32,16 @@ public class TokenProvider {
     private final String secretKey;
     private final long accessTokenValidityTime;
     private final long refreshTokenValidityTime;
-    private final RefreshTokenRepository refreshTokenRepository;
 
     private Key secretkey;
 
     public TokenProvider(@Value("${spring.jwt.secret_key}") String secretKey,
                          @Value("${spring.jwt.access-token-validity-in-seconds}") long accessTokenValidityTime,
-                         @Value("${spring.jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityTime,
-                         RefreshTokenRepository refreshTokenRepository) {
+                         @Value("${spring.jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityTime
+    ) {
         this.secretKey = secretKey;
         this.accessTokenValidityTime = accessTokenValidityTime * 1000;
         this.refreshTokenValidityTime = refreshTokenValidityTime * 1000;
-        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @PostConstruct

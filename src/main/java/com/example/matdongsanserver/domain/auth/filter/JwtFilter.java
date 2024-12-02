@@ -31,6 +31,7 @@ public class JwtFilter extends OncePerRequestFilter {
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain
     ) throws IOException, ServletException {
 
+        // swagger 및 헬스 체크 api는 열어둠
         String requestURI = request.getRequestURI();
         if (requestURI.startsWith("/api/auth") || requestURI.startsWith("/api/swagger") ||
                 requestURI.startsWith("/api/health") || requestURI.startsWith("/v3/api-docs")) {
@@ -59,6 +60,11 @@ public class JwtFilter extends OncePerRequestFilter {
         return null;
     }
 
+    /**
+     * 에세스 토큰 만료시에 401 응답 반환
+     * @param response
+     * @throws IOException
+     */
     private void handleUnauthorizedResponse(HttpServletResponse response) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

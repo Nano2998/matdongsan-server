@@ -19,7 +19,7 @@ import java.util.Collection;
 public class RefreshToken {
 
     private Long id;    // memberId
-    private String email;
+    private String email;   // memberEmail
     private Collection<? extends GrantedAuthority> authorities;
 
     @Indexed

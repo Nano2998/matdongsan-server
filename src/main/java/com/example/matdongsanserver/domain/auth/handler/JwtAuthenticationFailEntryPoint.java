@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+// 인증 없이 접근을 시도하는 경우
 @Component
 public class JwtAuthenticationFailEntryPoint implements AuthenticationEntryPoint {
     @Override

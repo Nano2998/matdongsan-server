@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+// 접근 권한이 없는 경우
 @Component
 public class JwtAccessDeniedHandler implements AccessDeniedHandler {
     @Override

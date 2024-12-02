@@ -18,7 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
@@ -43,6 +42,7 @@ public class SecurityConfig {
      * 		- CSRF 보호, XSS 방지 등 Spring Security의 다른 보안 메커니즘은 여전히 적용됨.
      * 		- 주로 특정 API 엔드포인트나 페이지에 사용됨.
      * 		- 보안 검사는 필요하지만 인증은 필요하지 않은 경우에 적합.
+     * 	    - 필터는 통과하므로 추가적인 처리 필요.
      */
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
