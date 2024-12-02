@@ -7,7 +7,6 @@ import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.entity.Child;
 import com.example.matdongsanserver.domain.member.entity.Follow;
 import com.example.matdongsanserver.domain.member.entity.Member;
-import com.example.matdongsanserver.domain.member.entity.Role;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.ChildRepository;
@@ -47,13 +46,13 @@ public class MemberService {
      * 회원가입 이후 닉네임 및 프로필 이미지 등록 로직
      */
     @Transactional
-    public MemberDto.MemberDetail updateMember(Long memberId, MemberDto.MemberCreationRequest memberCreationRequest) {
+    public MemberDto.MemberDetail updateMember(Long memberId, String nickname, MultipartFile profileImage) {
         Member findMember = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
         );
-        findMember.updateNickname(memberCreationRequest.getNickname());
+        findMember.updateNickname(nickname);
 
-        findMember.updateProfileImage(Optional.ofNullable(memberCreationRequest.getProfileImage())
+        findMember.updateProfileImage(Optional.ofNullable(profileImage)
                 .filter(file -> !file.isEmpty())
                 .map(this::uploadFile)
                 .orElse("https://i.namu.wiki/i/M0j6sykCciGaZJ8yW0CMumUigNAFS8Z-dJA9h_GKYSmqqYSQyqJq8D8xSg3qAz2htlsPQfyHZZMmAbPV-Ml9UA.webp"));
