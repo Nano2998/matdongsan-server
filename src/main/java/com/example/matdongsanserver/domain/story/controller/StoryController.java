@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.domain.story.controller;
 
+import com.example.matdongsanserver.domain.auth.util.SecurityUtils;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,24 +18,22 @@ public class StoryController {
     private final StoryService storyService;
 
     @Operation(summary = "동화 생성")
-    @PostMapping("/{memberId}")
+    @PostMapping
     public ResponseEntity<StoryDto.StoryCreationResponse> generateStory(
-            @RequestBody StoryDto.StoryCreationRequest requestDto,
-            @PathVariable Long memberId
+            @RequestBody StoryDto.StoryCreationRequest requestDto
     ) {
         return ResponseEntity.ok()
-                .body(storyService.generateStory(memberId, requestDto));
+                .body(storyService.generateStory(SecurityUtils.getLoggedInMemberId(), requestDto));
     }
 
     @Operation(summary = "동화 상세 수정")
-    @PatchMapping("/{memberId}/{storyId}")
+    @PatchMapping("/{storyId}")
     public ResponseEntity<StoryDto.StoryDetail> updateStoryDetail(
-            @PathVariable Long memberId,
             @PathVariable String storyId,
             @RequestBody StoryDto.StoryUpdateRequest requestDto
     ) {
         return ResponseEntity.ok()
-                .body(storyService.updateStoryDetail(memberId, storyId, requestDto));
+                .body(storyService.updateStoryDetail(SecurityUtils.getLoggedInMemberId(), storyId, requestDto));
     }
 
     @Operation(summary = "동화 상세 조회")
@@ -65,22 +64,20 @@ public class StoryController {
     }
 
     @Operation(summary = "동화 좋아요")
-    @PostMapping("/likes/{memberId}/{storyId}")
+    @PostMapping("/likes/{storyId}")
     public ResponseEntity<Void> likeStory(
-            @PathVariable Long memberId,
             @PathVariable String storyId
     ) {
-        storyService.addLike(storyId, memberId);
+        storyService.addLike(storyId, SecurityUtils.getLoggedInMemberId());
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "동화 좋아요 취소")
-    @DeleteMapping("/likes/{memberId}/{storyId}")
+    @DeleteMapping("/likes/{storyId}")
     public ResponseEntity<Void> unlikeStory(
-            @PathVariable Long memberId,
             @PathVariable String storyId
     ) {
-        storyService.removeLike(storyId, memberId);
+        storyService.removeLike(storyId, SecurityUtils.getLoggedInMemberId());
         return ResponseEntity.noContent().build();
     }
 }

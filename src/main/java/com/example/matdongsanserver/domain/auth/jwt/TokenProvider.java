@@ -82,17 +82,33 @@ public class TokenProvider {
      * 토큰의 유효성 검사
      */
     public boolean validateToken(String token) {
-        if (!StringUtils.hasText(token)) {
-            return false;
-        }
         try {
             Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (SecurityException | MalformedJwtException | IllegalArgumentException | UnsupportedJwtException |
-                 ExpiredJwtException e) {
+        } catch (ExpiredJwtException e) {
+            // 만료된경우도 true 리턴
+            return true;
+        }
+        catch (SecurityException | MalformedJwtException | IllegalArgumentException | UnsupportedJwtException e) {
+            return false;
+        }
+    }
+
+    /**
+     * 토큰의 만료 여부 검사
+     */
+    public boolean validateTokenExpired(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (ExpiredJwtException e) {
+            // 만료 여부만 검사
             return false;
         }
     }

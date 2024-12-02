@@ -139,7 +139,10 @@ public class AuthService {
      * 리프레시 토큰 검증
      */
     private void validateRefreshToken(String refreshToken) {
-        if (!tokenProvider.validateToken(refreshToken)) {
+        if (!StringUtils.hasText(refreshToken) || !tokenProvider.validateToken(refreshToken)) {
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+        }
+        if (!tokenProvider.validateTokenExpired(refreshToken)) {
             throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
     }

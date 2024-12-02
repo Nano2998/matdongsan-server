@@ -14,7 +14,7 @@ public enum AuthErrorCode implements ErrorCode {
     ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "에세스 토큰이 만료되었습니다."),
     AUTH_SERVER_ERROR(HttpStatus.BAD_REQUEST, "인증 서버 오류입니다."),
     INVALID_LOGIN_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 로그인 요청입니다."),
-    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "토큰을 찾을 수 없거나 잘못된 토큰입니다.")
+    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 토큰입니다.")
     ;
 
     private final HttpStatus httpStatus;

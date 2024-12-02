@@ -43,9 +43,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(accessToken)) {
             if (tokenProvider.validateToken(accessToken)) {
-                SecurityContextHolder.getContext().setAuthentication(tokenProvider.getAuthentication(accessToken));
+                if (tokenProvider.validateTokenExpired(accessToken)) {
+                    SecurityContextHolder.getContext().setAuthentication(tokenProvider.getAuthentication(accessToken));
+                } else {
+                    handleAccessTokenExpired(response);
+                    return;
+                }
             } else {
-                handleAccessTokenExpired(response);
+                handleInvalidToken(response);
                 return;
             }
         } else {
@@ -72,6 +77,22 @@ public class JwtFilter extends OncePerRequestFilter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
         ErrorResponse errorResponse = ErrorResponse.of(AuthErrorCode.ACCESS_TOKEN_EXPIRED);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+
+        response.getWriter().write(jsonResponse);
+        response.getWriter().flush();
+    }
+
+    /**
+     * 잘못된 형식의 토큰일 때
+     */
+    private void handleInvalidToken(HttpServletResponse response) throws IOException {
+        response.setContentType("application/json; charset=UTF-8");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+        ErrorResponse errorResponse = ErrorResponse.of(AuthErrorCode.INVALID_TOKEN);
 
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonResponse = objectMapper.writeValueAsString(errorResponse);

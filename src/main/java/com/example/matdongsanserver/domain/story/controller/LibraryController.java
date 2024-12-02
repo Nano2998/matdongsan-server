@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.domain.story.controller;
 
+import com.example.matdongsanserver.domain.auth.util.SecurityUtils;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,29 +57,26 @@ public class LibraryController {
     }
 
     @Operation(summary = "좋아요 누른 동화 조회")
-    @GetMapping("/likes/{memberId}")
+    @GetMapping("/likes")
     public ResponseEntity<List<StoryDto.StorySummary>> getLikedStories(
-            @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.getLikedStories(memberId));
+                .body(storyService.getLikedStories(SecurityUtils.getLoggedInMemberId()));
     }
 
     @Operation(summary = "내 동화 조회 - 최신순")
-    @GetMapping("/recent/my/{memberId}")
+    @GetMapping("/recent/my")
     public ResponseEntity<List<StoryDto.StorySummary>> getRecentMyStories(
-            @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.getRecentMyStories(memberId));
+                .body(storyService.getRecentMyStories(SecurityUtils.getLoggedInMemberId()));
     }
 
     @Operation(summary = "내 동화 조회 - 좋아요순")
-    @GetMapping("/popular/my/{memberId}")
+    @GetMapping("/popular/my")
     public ResponseEntity<List<StoryDto.StorySummary>> getPopularMyStories(
-            @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.getPopularMyStories(memberId));
+                .body(storyService.getPopularMyStories(SecurityUtils.getLoggedInMemberId()));
     }
 }
