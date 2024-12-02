@@ -4,6 +4,7 @@ import com.example.matdongsanserver.domain.member.entity.Child;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -13,8 +14,7 @@ public class MemberDto {
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
     public static class MemberCreationRequest {
-        private String email;
-        private String profileImage;
+        private MultipartFile profileImage;
         private String nickname;
     }
 

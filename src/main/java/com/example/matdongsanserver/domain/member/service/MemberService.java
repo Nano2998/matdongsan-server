@@ -1,5 +1,8 @@
 package com.example.matdongsanserver.domain.member.service;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.entity.Child;
 import com.example.matdongsanserver.domain.member.entity.Follow;
@@ -13,11 +16,17 @@ import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -25,26 +34,62 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class MemberService {
 
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucketName;
+
     private final MemberRepository memberRepository;
     private final ChildRepository childRepository;
     private final FollowRepository followRepository;
     private final StoryRepository storyRepository;
+    private final AmazonS3 amazonS3;
 
     /**
-     * 멤버 생성 - 로그인 도입시 수정 예정
+     * 회원가입 후에 회원 정보 업데이트 로직
      */
     @Transactional
-    public MemberDto.MemberDetail registerMember(MemberDto.MemberCreationRequest memberCreationRequest) {
+    public MemberDto.MemberDetail updateMember(Long memberId, MemberDto.MemberCreationRequest memberCreationRequest) {
+        Member findMember = memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+        );
+        findMember.updateNickname(memberCreationRequest.getNickname());
+
+        findMember.updateProfileImage(Optional.ofNullable(memberCreationRequest.getProfileImage())
+                .filter(file -> !file.isEmpty())
+                .map(this::uploadFile)
+                .orElse("https://i.namu.wiki/i/M0j6sykCciGaZJ8yW0CMumUigNAFS8Z-dJA9h_GKYSmqqYSQyqJq8D8xSg3qAz2htlsPQfyHZZMmAbPV-Ml9UA.webp"));
+
         return MemberDto.MemberDetail.builder()
-                .member(memberRepository.save(Member.builder()
-                        .email(memberCreationRequest.getEmail())
-                        .profileImage(memberCreationRequest.getProfileImage())
-                        .role(Role.USER)
-                        .nickname(memberCreationRequest.getNickname())
-                        .profileImage(memberCreationRequest.getProfileImage())
-                        .build()))
-                .storyCount(0L)
+                .member(findMember)
+                .storyCount(storyRepository.countByMemberId(memberId))
                 .build();
+    }
+
+    public String uploadFile(MultipartFile profileImage) {
+        try {
+            // 고유한 파일 이름 생성
+            String fileName = generateFileName(profileImage.getOriginalFilename());
+
+            // 파일 메타데이터 설정
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(profileImage.getSize());
+            metadata.setContentType(profileImage.getContentType());
+
+            // S3에 파일 업로드
+            amazonS3.putObject(new PutObjectRequest(bucketName, fileName, profileImage.getInputStream(), metadata));
+
+            // 업로드된 파일의 URL 반환
+            return amazonS3.getUrl(bucketName, fileName).toString();
+        } catch (IOException e) {
+            throw new MemberException(MemberErrorCode.PROFILE_IMAGE_UPLOAD_FAILED);
+        }
+    }
+
+    private String generateFileName(String originalFileName) {
+        if (!StringUtils.hasText(originalFileName)) {
+            throw new MemberException(MemberErrorCode.INVALID_FILE_NAME);
+        }
+        String extension = originalFileName.substring(originalFileName.lastIndexOf('.'));
+        return "profiles/" + UUID.randomUUID() + extension;
     }
 
     /**

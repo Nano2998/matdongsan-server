@@ -19,13 +19,14 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @Operation(summary = "회원 생성")
-    @PostMapping
-    public ResponseEntity<MemberDto.MemberDetail> registerMember(
+    @Operation(summary = "회원가입 후 회원 정보 업데이트")
+    @PostMapping("/{memberId}")
+    public ResponseEntity<MemberDto.MemberDetail> updateMember(
+            @PathVariable Long memberId,
             @RequestBody MemberDto.MemberCreationRequest memberCreationRequest
     ) {
         return ResponseEntity.ok()
-                .body(memberService.registerMember(memberCreationRequest));
+                .body(memberService.updateMember(memberId, memberCreationRequest));
     }
 
     @Operation(summary = "회원 조회")

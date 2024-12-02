@@ -18,7 +18,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "인증 코드를 통해 카카오 토큰 반환 (테스트용)")
+    @Operation(summary = "인증 코드를 통해 카카오 토큰 반환 (로컬 테스트용)")
     @GetMapping("/kakao/token")
     public ResponseEntity<String> getKakaoToken(@RequestParam(name = "code") String code)
             throws JsonProcessingException {

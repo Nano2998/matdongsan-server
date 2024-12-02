@@ -58,8 +58,16 @@ public class Member extends BaseTimeEntity {
         this.followerList.add(follow);
     }
 
-    // 닉네임이 없거나 자녀정보가 없을 때
+    public void updateProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    // 닉네임이 없을 때
     public boolean isFirstLogin() {
-        return !StringUtils.hasText(nickname) || children.isEmpty();
+        return !StringUtils.hasText(nickname);
     }
 }
