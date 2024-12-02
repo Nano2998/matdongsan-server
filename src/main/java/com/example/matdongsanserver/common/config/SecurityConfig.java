@@ -52,7 +52,7 @@ public class SecurityConfig {
                         "/js/**",
                         "/favicon.ico",
                         "/fonts/**",
-                        " /assets/**",
+                        "/assets/**",
                         "/error"
                         );
     }

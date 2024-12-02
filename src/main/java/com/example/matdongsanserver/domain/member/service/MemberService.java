@@ -101,7 +101,6 @@ public class MemberService {
                 ))
                 .storyCount(storyRepository.countByMemberId(memberId))
                 .build();
-
     }
 
     /**

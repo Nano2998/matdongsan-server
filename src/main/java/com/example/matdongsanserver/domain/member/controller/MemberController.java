@@ -1,6 +1,7 @@
 package com.example.matdongsanserver.domain.member.controller;
 
 
+import com.example.matdongsanserver.domain.auth.util.SecurityUtils;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,12 +34,11 @@ public class MemberController {
     }
 
     @Operation(summary = "회원 조회")
-    @GetMapping("/{memberId}")
+    @GetMapping
     public ResponseEntity<MemberDto.MemberDetail> getMemberDetail(
-            @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(memberService.getMemberDetail(memberId));
+                .body(memberService.getMemberDetail(SecurityUtils.getLoggedInMemberId()));
     }
 
     @Operation(summary = "자녀 생성")

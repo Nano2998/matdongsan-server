@@ -64,10 +64,14 @@ public class AuthService {
     public String getToken(final String code) throws JsonProcessingException {
         HttpEntity<MultiValueMap<String, String>> request = buildKakaoTokenRequest(code);
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                KAKAO_TOKEN_URL, HttpMethod.POST, request, String.class);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    KAKAO_TOKEN_URL, HttpMethod.POST, request, String.class);
 
-        return parseJsonNode(response.getBody()).get("access_token").asText();
+            return parseJsonNode(response.getBody()).get("access_token").asText();
+        } catch (HttpClientErrorException e) {
+            throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
+        }
     }
 
     /**
@@ -100,7 +104,8 @@ public class AuthService {
 
         validateRefreshToken(refreshToken);
 
-        RefreshToken findToken = findRefreshToken(refreshToken);
+        RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED));
 
         TokenResponse tokenResponse = tokenProvider.createToken(
                 findToken.getId(), findToken.getEmail(), findToken.getAuthority());
@@ -201,14 +206,6 @@ public class AuthService {
                 .authorities(findToken.getAuthorities())
                 .refreshToken(newRefreshToken)
                 .build());
-    }
-
-    /**
-     * RefreshToken 엔티티 조회
-     */
-    private RefreshToken findRefreshToken(String refreshToken) {
-        return refreshTokenRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED));
     }
 
     /**

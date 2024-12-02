@@ -41,11 +41,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String accessToken = getTokenFromHeader(request, ACCESS_HEADER);
 
-        if (StringUtils.hasText(accessToken) && tokenProvider.validateToken(accessToken)) {
-            SecurityContextHolder.getContext()
-                    .setAuthentication(tokenProvider.getAuthentication(accessToken));
+        if (StringUtils.hasText(accessToken)) {
+            if (tokenProvider.validateToken(accessToken)) {
+                SecurityContextHolder.getContext().setAuthentication(tokenProvider.getAuthentication(accessToken));
+            } else {
+                handleAccessTokenExpired(response);
+                return;
+            }
         } else {
-            handleUnauthorizedResponse(response);
+            filterChain.doFilter(request, response);
             return;
         }
 
@@ -62,10 +66,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
     /**
      * 에세스 토큰 만료시에 401 응답 반환
-     * @param response
-     * @throws IOException
      */
-    private void handleUnauthorizedResponse(HttpServletResponse response) throws IOException {
+    private void handleAccessTokenExpired(HttpServletResponse response) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
