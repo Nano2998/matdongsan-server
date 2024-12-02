@@ -116,6 +116,10 @@ public class MemberService {
         List<MemberDto.ChildDetail> childDetails = new ArrayList<>();
 
         childCreationRequests.forEach(childCreationRequest -> {
+            if (childCreationRequest.getEnglishAge() < 3 || childCreationRequest.getEnglishAge() > 8 ||
+                    childCreationRequest.getKoreanAge() < 3 || childCreationRequest.getKoreanAge() > 8) {
+                throw new MemberException(MemberErrorCode.INVALID_AGE);
+            }
             childDetails.add(MemberDto.ChildDetail.builder()
                     .child(childRepository.save(Child.builder()
                             .member(member)

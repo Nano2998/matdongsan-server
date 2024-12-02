@@ -8,7 +8,7 @@ import lombok.*;
 import java.time.LocalDate;
 
 public class MemberDto {
-    
+
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
