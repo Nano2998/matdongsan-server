@@ -15,7 +15,7 @@ import java.util.Collection;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@RedisHash(value = "refresh", timeToLive = 86400)
+@RedisHash(value = "refresh", timeToLive = 864000)  // 10일간 생존
 public class RefreshToken {
 
     private Long id;    // memberId

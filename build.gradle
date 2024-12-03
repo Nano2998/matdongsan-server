@@ -51,7 +51,7 @@ dependencies {
     runtimeOnly 'com.mysql:mysql-connector-j'
     runtimeOnly 'org.postgresql:postgresql'
 
-    implementation'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 
     //하드웨어 연결(mqtt)
     implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
