@@ -6,11 +6,13 @@ import com.example.matdongsanserver.domain.auth.dto.TokenResponse;
 import com.example.matdongsanserver.domain.auth.service.AuthService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Auth API", description = "인증/인가 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
