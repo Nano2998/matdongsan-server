@@ -195,7 +195,8 @@ public class StoryService {
             ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                String fileName = id + ".mp3";
+                String folderName = "tts/";
+                String fileName = folderName + id + ".mp3";
 
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(response.getBody());
 

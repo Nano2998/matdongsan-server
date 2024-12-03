@@ -3,6 +3,7 @@ package com.example.matdongsanserver.domain.member.entity;
 import com.example.matdongsanserver.common.model.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,5 +56,18 @@ public class Member extends BaseTimeEntity {
 
     public void addFollower(Follow follow) {
         this.followerList.add(follow);
+    }
+
+    public void updateProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    // 닉네임이 없을 때
+    public boolean isFirstLogin() {
+        return !StringUtils.hasText(nickname);
     }
 }

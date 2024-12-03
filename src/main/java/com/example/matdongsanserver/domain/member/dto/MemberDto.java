@@ -12,15 +12,6 @@ public class MemberDto {
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
-    public static class MemberCreationRequest {
-        private String email;
-        private String profileImage;
-        private String nickname;
-    }
-
-    @Getter
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
     public static class MemberDetail {
         private Long id;
         private String email;

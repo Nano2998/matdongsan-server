@@ -1,12 +1,16 @@
 package com.example.matdongsanserver.domain.member.controller;
 
+
+import com.example.matdongsanserver.domain.auth.util.SecurityUtils;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,71 +22,66 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @Operation(summary = "회원 생성")
-    @PostMapping
-    public ResponseEntity<MemberDto.MemberDetail> registerMember(
-            @RequestBody MemberDto.MemberCreationRequest memberCreationRequest
+    @Operation(summary = "회원가입 이후 닉네임 및 프로필 이미지 등록")
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<MemberDto.MemberDetail> updateMember(
+            @RequestParam String nickname,
+            @RequestPart("multipartFile") MultipartFile profileImage
     ) {
         return ResponseEntity.ok()
-                .body(memberService.registerMember(memberCreationRequest));
+                .body(memberService.updateMember(SecurityUtils.getLoggedInMemberId(), nickname, profileImage));
     }
 
     @Operation(summary = "회원 조회")
-    @GetMapping("/{memberId}")
+    @GetMapping
     public ResponseEntity<MemberDto.MemberDetail> getMemberDetail(
-            @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(memberService.getMemberDetail(memberId));
+                .body(memberService.getMemberDetail(SecurityUtils.getLoggedInMemberId()));
     }
 
     @Operation(summary = "자녀 생성")
-    @PostMapping("/children/{memberId}")
+    @PostMapping("/children")
     public ResponseEntity<List<MemberDto.ChildDetail>> registerChild(
-            @RequestBody List<MemberDto.ChildCreationRequest> childCreationRequests,
-            @PathVariable Long memberId
+            @RequestBody List<MemberDto.ChildCreationRequest> childCreationRequests
     ) {
         return ResponseEntity.ok()
-                .body(memberService.registerChild(memberId, childCreationRequests));
+                .body(memberService.registerChild(SecurityUtils.getLoggedInMemberId(), childCreationRequests));
     }
 
     @Operation(summary = "자녀 조회")
-    @GetMapping("/children/{memberId}")
+    @GetMapping("/children")
     public ResponseEntity<List<MemberDto.ChildDetail>> getChildDetails(
-            @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(memberService.getChildDetails(memberId));
+                .body(memberService.getChildDetails(SecurityUtils.getLoggedInMemberId()));
     }
 
     @Operation(summary = "팔로우")
-    @PostMapping("/follow/{memberId}/{followerId}")
+    @PostMapping("/follow/{followerId}")
     public ResponseEntity<Void> follow(
-            @PathVariable Long memberId,
             @PathVariable Long followerId
     ) {
-        memberService.follow(memberId, followerId);
+        memberService.follow(SecurityUtils.getLoggedInMemberId(), followerId);
         return ResponseEntity.noContent()
                 .build();
     }
 
     @Operation(summary = "언팔로우")
-    @DeleteMapping("/follow/{memberId}/{followerId}")
+    @DeleteMapping("/follow/{followerId}")
     public ResponseEntity<Void> unfollow(
-            @PathVariable Long memberId,
             @PathVariable Long followerId
     ) {
-        memberService.unfollow(memberId, followerId);
+        memberService.unfollow(SecurityUtils.getLoggedInMemberId(), followerId);
         return ResponseEntity.noContent()
                 .build();
     }
 
     @Operation(summary = "팔로우 리스트 조회")
-    @GetMapping("/follow/{memberId}")
+    @GetMapping("/follow")
     public ResponseEntity<List<MemberDto.MemberSummary>> getFollowers(
-            @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(memberService.getFollowers(memberId));
+                .body(memberService.getFollowers(SecurityUtils.getLoggedInMemberId()));
     }
 }

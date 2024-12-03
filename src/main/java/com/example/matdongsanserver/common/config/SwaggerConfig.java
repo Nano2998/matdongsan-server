@@ -2,8 +2,11 @@ package com.example.matdongsanserver.common.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,10 +18,26 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
     @Bean
-    public GroupedOpenApi chatOpenApi() {
-        return GroupedOpenApi.builder()
-                .group("밥4조")
-                .pathsToMatch("/**")
-                .build();
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+                .components(
+                        new Components()
+                                .addSecuritySchemes("accessToken", new SecurityScheme()
+                                        .name("accessToken")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .bearerFormat("JWT")
+                                )
+                                .addSecuritySchemes("refreshToken", new SecurityScheme()
+                                        .name("refreshToken")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .bearerFormat("JWT")
+                                )
+                )
+                .addSecurityItem(new SecurityRequirement()
+                        .addList("accessToken")
+                        .addList("refreshToken")
+                );
     }
 }
