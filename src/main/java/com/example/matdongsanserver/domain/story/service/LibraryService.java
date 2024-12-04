@@ -3,7 +3,6 @@ package com.example.matdongsanserver.domain.story.service;
 import com.example.matdongsanserver.domain.story.SortType;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
-import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -97,9 +96,6 @@ public class LibraryService {
 
         // TTL 설정
         redisTemplate.expire(redisKey, TTL_DAYS, TimeUnit.DAYS);
-
-        Long listSize = redisTemplate.opsForList().size(redisKey);
-        System.out.println("Final List Size: " + listSize);
     }
 
 
