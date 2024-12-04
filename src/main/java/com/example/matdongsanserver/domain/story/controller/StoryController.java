@@ -42,7 +42,7 @@ public class StoryController {
             @PathVariable String storyId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.getStoryDetail(storyId));
+                .body(storyService.getStoryDetail(storyId,SecurityUtils.getLoggedInMemberId()));
     }
 
     @Operation(summary = "영어 동화 번역")

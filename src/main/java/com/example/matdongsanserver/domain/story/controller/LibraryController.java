@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Library API", description = "라이브러리 API")
 @RestController
 @RequiredArgsConstructor
@@ -58,5 +60,11 @@ public class LibraryController {
     ) {
         return ResponseEntity.ok()
                 .body(libraryService.getLikedStories(SecurityUtils.getLoggedInMemberId(), pageable));
+    }
+
+    @Operation(summary = "최근 본 동화 리스트 조회")
+    @GetMapping("/recent")
+    public ResponseEntity<List<StoryDto.StorySummary>> getRecentStories() {
+        return ResponseEntity.ok().body(libraryService.getRecentStories(SecurityUtils.getLoggedInMemberId()));
     }
 }
