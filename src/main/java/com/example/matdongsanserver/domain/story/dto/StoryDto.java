@@ -76,12 +76,14 @@ public class StoryDto {
         private String id;
         private String title;
         private String content;
+        private String author;
 
         @Builder
         public StoryCreationResponse(Story story) {
             this.id = story.getId();
             this.title = story.getTitle();
             this.content = story.getContent();
+            this.author = story.getAuthor();
         }
     }
 
@@ -94,6 +96,7 @@ public class StoryDto {
         private Long likes;
         private String coverUrl;
         private List<String> tags;
+        private String author;
 
         public StorySummary(Story story) {
             this.id = story.getId();
@@ -101,6 +104,7 @@ public class StoryDto {
             this.likes = story.getLikes();
             this.coverUrl = story.getCoverUrl();
             this.tags = story.getTags();
+            this.author = story.getAuthor();
         }
     }
 
@@ -113,21 +117,15 @@ public class StoryDto {
         private Language language;
         private List<String> tags;
         private LocalDateTime createdAt;
-        private String writerNickname;
 
         @Builder
-        public StoryDetail(Story story, Member member) {
+        public StoryDetail(Story story) {
             super(story);
             this.content = story.getContent();
             this.age = story.getAge();
             this.language = story.getLanguage();
             this.tags = story.getTags();
             this.createdAt = story.getCreatedAt();
-            if (member != null) {
-                this.writerNickname = member.getNickname();
-            } else {
-                this.writerNickname = null;
-            }
         }
     }
 

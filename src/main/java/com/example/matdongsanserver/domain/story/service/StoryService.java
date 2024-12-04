@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.matdongsanserver.common.config.ChatGptConfig;
 import com.example.matdongsanserver.common.config.PromptsConfig;
+import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -28,9 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -79,7 +78,7 @@ public class StoryService {
      */
     @Transactional
     public StoryDto.StoryCreationResponse generateStory(Long memberId, StoryDto.StoryCreationRequest requestDto) {
-        memberRepository.findById(memberId).orElseThrow(
+        Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
         );
         String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getGiven());
@@ -99,6 +98,7 @@ public class StoryService {
                         .title(parseStory.get("title"))
                         .content(parseStory.get("content"))
                         .memberId(memberId)
+                        .author(member.getNickname())
                         .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
                         .build()))
                 .build();
@@ -142,8 +142,6 @@ public class StoryService {
 
         return StoryDto.StoryDetail.builder()
                 .story(storyRepository.save(story))
-                .member(memberRepository.findById(memberId)
-                        .orElse(null))
                 .build();
     }
 
@@ -155,8 +153,6 @@ public class StoryService {
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
         return StoryDto.StoryDetail.builder()
                 .story(story)
-                .member(memberRepository.findById(story.getMemberId())
-                        .orElse(null))
                 .build();
     }
 
@@ -258,79 +254,6 @@ public class StoryService {
                 ));
 
         storyRepository.save(story.removeLikes());
-    }
-
-    /**
-     * 최신 동화 리스트
-     */
-    public List<StoryDto.StorySummary> getRecentStories() {
-        return storyRepository.findByIsPublicTrueOrderByCreatedAtDesc()
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
-    }
-
-    /**
-     * 인기 동화 리스트
-     */
-    public List<StoryDto.StorySummary> getPopularStories() {
-        return storyRepository.findByIsPublicTrueOrderByLikesDesc()
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
-    }
-
-    /**
-     * 특정 작가의 동화 리스트 최신
-     */
-    public List<StoryDto.StorySummary> getRecentStoriesByMemberId(Long memberId) {
-        return storyRepository.findByIsPublicTrueAndMemberIdOrderByCreatedAtDesc(memberId)
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
-    }
-
-    /**
-     * 특정 작가의 동화 리스트 인기
-     */
-    public List<StoryDto.StorySummary> getPopularStoriesByMemberId(Long memberId) {
-        return storyRepository.findByIsPublicTrueAndMemberIdOrderByLikesDesc(memberId)
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
-    }
-
-    /**
-     * 좋아요 누른 동화 리스트
-     */
-    public List<StoryDto.StorySummary> getLikedStories(Long memberId) {
-        return storyRepository.findByIdIn(storyLikeRepository.findByMemberId(memberId)
-                        .stream()
-                        .map(StoryLike::getStoryId)
-                        .collect(Collectors.toList()))
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
-    }
-
-    /**
-     * 내가 만든 동화 리스트 최신
-     */
-    public List<StoryDto.StorySummary> getRecentMyStories(Long memberId) {
-        return storyRepository.findByMemberIdOrderByCreatedAtDesc(memberId)
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
-    }
-
-    /**
-     * 내가 만든 동화 리스트 인기
-     */
-    public List<StoryDto.StorySummary> getPopularMyStories(Long memberId) {
-        return storyRepository.findByMemberIdOrderByLikesDesc(memberId)
-                .stream()
-                .map(StoryDto.StorySummary::new)
-                .toList();
     }
 
     /**

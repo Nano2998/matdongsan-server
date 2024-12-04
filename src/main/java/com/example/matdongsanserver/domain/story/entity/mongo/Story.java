@@ -34,6 +34,8 @@ public class Story {
 
     private String content; //내용
 
+    private String author;
+
     private String translationTitle; //영어 동화일 경우 번역본
 
     private String translationContent; //영어 동화일 경우 번역본
@@ -57,7 +59,7 @@ public class Story {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Story(int age, Language language, String given, String title, String content, String coverUrl, Long memberId) {
+    public Story(int age, Language language, String given, String title, String content, String coverUrl, Long memberId, String author) {
         this.age = age;
         this.language = language;
         this.given = given;
@@ -71,6 +73,7 @@ public class Story {
         this.ttsUrl = "";
         this.likes = 0L;
         this.memberId = memberId;
+        this.author = author;
     }
 
     public Story updateStoryDetail(StoryDto.StoryUpdateRequest storyUpdateRequest) {
