@@ -36,7 +36,7 @@ public class LibraryService {
     /**
      * 특정 작가의 동화 리스트 조회
      */
-    public Page<StoryDto.StorySummary> getStoriesByMemberId(Long authorId, SortType sortType, Pageable pageable) {
+    public Page<StoryDto.StorySummary> getStoriesByAuthorId(Long authorId, SortType sortType, Pageable pageable) {
         return switch (sortType) {
             case POPULAR -> storyRepository.findByIsPublicTrueAndMemberIdOrderByLikesDesc(authorId, pageable)
                     .map(StoryDto.StorySummary::new);
