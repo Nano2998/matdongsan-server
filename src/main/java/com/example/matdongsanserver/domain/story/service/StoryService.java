@@ -56,21 +56,15 @@ public class StoryService {
     private String bucketName;
 
     private final PromptsConfig promptsConfig;
-
     private final ChatGptConfig chatGptConfig;
-
     private final StoryRepository storyRepository;
-
     private final AmazonS3 amazonS3;
-
     private final MemberRepository memberRepository;
-
     private final StoryLikeRepository storyLikeRepository;
+    private final LibraryService libraryService;
 
     private static final double TEMPERATURE = 0.9;
-
     private static final double TTS_SPEED = 0.95;
-
     private static final String GENERATE_COMMAND = "Generate text that faithfully fulfills the user's request.";
 
     /**
@@ -89,18 +83,21 @@ public class StoryService {
             maxTokens = getMaxTokensForAgeKo(requestDto.getAge());
         }
         Map<String, String> parseStory = parseStoryResponse(sendOpenAiRequest(prompt, maxTokens));
+        Story save = storyRepository.save(Story.builder()
+                .age(requestDto.getAge())
+                .language(requestDto.getLanguage())
+                .given(requestDto.getGiven())
+                .title(parseStory.get("title"))
+                .content(parseStory.get("content"))
+                .memberId(memberId)
+                .author(member.getNickname())
+                .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
+                .build());
+
+        libraryService.addRecentStories(memberId,save.getId());
 
         return StoryDto.StoryCreationResponse.builder()
-                .story(storyRepository.save(Story.builder()
-                        .age(requestDto.getAge())
-                        .language(requestDto.getLanguage())
-                        .given(requestDto.getGiven())
-                        .title(parseStory.get("title"))
-                        .content(parseStory.get("content"))
-                        .memberId(memberId)
-                        .author(member.getNickname())
-                        .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
-                        .build()))
+                .story(save)
                 .build();
     }
 
@@ -148,9 +145,10 @@ public class StoryService {
     /**
      * 동화 상세 조회
      */
-    public StoryDto.StoryDetail getStoryDetail(String storyId) {
+    public StoryDto.StoryDetail getStoryDetail(String storyId, Long memberId) {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
+        libraryService.addRecentStories(memberId, storyId);
         return StoryDto.StoryDetail.builder()
                 .story(story)
                 .build();

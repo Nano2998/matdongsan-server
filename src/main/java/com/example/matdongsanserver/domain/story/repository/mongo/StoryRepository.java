@@ -16,4 +16,5 @@ public interface StoryRepository extends MongoRepository<Story, String> {
     Page<Story> findByMemberIdOrderByCreatedAtDesc(Long memberId, Pageable pageable);
     Page<Story> findByMemberIdOrderByLikesDesc(Long memberId, Pageable pageable);
     Page<Story> findByIdIn(List<String> storyIds, Pageable pageable);
+    List<Story> findByIdIn(List<String> storyIds);
 }
