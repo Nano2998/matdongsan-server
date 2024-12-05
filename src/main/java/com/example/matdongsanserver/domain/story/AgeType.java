@@ -1,5 +1,7 @@
 package com.example.matdongsanserver.domain.story;
 
+import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
+import com.example.matdongsanserver.domain.story.exception.StoryException;
 import lombok.Getter;
 
 @Getter
@@ -24,7 +26,7 @@ public enum AgeType {
             case "lv1" -> LV1;
             case "lv2" -> LV2;
             case "lv3" -> LV3;
-            default -> throw new IllegalArgumentException("Invalid AgeType: " + value);
+            default -> throw new StoryException(StoryErrorCode.INVALID_AGE_TYPE);
         };
     }
 
