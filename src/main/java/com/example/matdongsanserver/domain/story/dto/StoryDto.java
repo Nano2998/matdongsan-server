@@ -1,7 +1,6 @@
 package com.example.matdongsanserver.domain.story.dto;
 
-import com.example.matdongsanserver.domain.member.entity.Member;
-import com.example.matdongsanserver.domain.story.entity.QuestionAnswerPair;
+import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
@@ -152,14 +151,16 @@ public class StoryDto {
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
     public static class StoryQuestionResponse {
         private Long id;
-        private List<QnAPairs> qnAPairs;
+        private String storyId;
+        private List<QnAs> qnAs;
 
         @Builder
         public StoryQuestionResponse(StoryQuestion storyquestion) {
             this.id = storyquestion.getId();
-            this.qnAPairs = storyquestion.getQuestionAnswerPairs()
+            this.storyId = storyquestion.getStoryId();
+            this.qnAs = storyquestion.getQuestionAnswers()
                     .stream()
-                    .map(QnAPairs::new)
+                    .map(QnAs::new)
                     .toList();
         }
     }
@@ -167,13 +168,15 @@ public class StoryDto {
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
-    public static class QnAPairs {
+    public static class QnAs {
+        private Long id;
         private String question;
         private String sampleAnswer;
         private String answer;
 
         @Builder
-        public QnAPairs(QuestionAnswerPair questionAnswerPairs) {
+        public QnAs(QuestionAnswer questionAnswerPairs) {
+            this.id = questionAnswerPairs.getId();
             this.question = questionAnswerPairs.getQuestion();
             this.sampleAnswer = questionAnswerPairs.getSampleAnswer();
             this.answer = questionAnswerPairs.getAnswer();

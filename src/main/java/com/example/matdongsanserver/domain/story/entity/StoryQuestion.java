@@ -19,17 +19,18 @@ public class StoryQuestion extends BaseTimeEntity {
     @Column(name = "story_question_id")
     private Long id;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "question_answer_pairs", joinColumns = @JoinColumn(name = "story_question_id"))
-    private List<QuestionAnswerPair> questionAnswerPairs = new ArrayList<>();
+    @OneToMany(mappedBy = "storyQuestion", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuestionAnswer> questionAnswers = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;  // 추후에 자녀에게 저장하도록 수정 고려
 
+    private String storyId;
+
     @Builder
-    public StoryQuestion(List<QuestionAnswerPair> questionAnswerPairs, Member member) {
-        this.questionAnswerPairs = questionAnswerPairs;
+    public StoryQuestion(Member member, String storyId) {
         this.member = member;
+        this.storyId = storyId;
     }
 }
