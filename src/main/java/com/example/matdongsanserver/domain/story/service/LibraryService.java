@@ -133,4 +133,17 @@ public class LibraryService {
         String redisKey = "user:" + memberId + ":recentTales";
         return redisTemplate.opsForList().range(redisKey, 0, -1);
     }
+
+    /**
+     * 동화 검색
+     * @param tags
+     * @param pageable
+     * @return
+     */
+    public Page<StoryDto.StorySummary> searchStories(List<String> tags, Pageable pageable) {
+
+        return storyRepository.findByTags(tags, pageable)
+                .map(StoryDto.StorySummary::new);
+    }
+
 }

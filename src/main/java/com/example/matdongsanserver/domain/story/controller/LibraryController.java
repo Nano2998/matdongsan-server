@@ -74,4 +74,13 @@ public class LibraryController {
     public ResponseEntity<List<StoryDto.StorySummary>> getRecentStories() {
         return ResponseEntity.ok().body(libraryService.getRecentStories(SecurityUtils.getLoggedInMemberId()));
     }
+
+    @Operation(summary = "동화 검색")
+    @GetMapping("/search")
+    public ResponseEntity<Page<StoryDto.StorySummary>> searchStories(
+            @RequestParam List<String> tags,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok().body(libraryService.searchStories(tags,pageable));
+    }
 }
