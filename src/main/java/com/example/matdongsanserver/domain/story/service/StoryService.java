@@ -387,4 +387,50 @@ public class StoryService {
             throw new StoryException(StoryErrorCode.STORY_TRANSLATION_FAILED);
         }
     }
+
+    /**
+     * 동화 질문 생성 요청 전송
+     */
+    private String sendQuestionRequest(Language language, int age, String story) {
+        try {
+            String template = promptsConfig.getQuestion();
+            template = template.replace("{age}", Integer.toString(age));
+            switch (language) {
+                case KO -> template = template.replace("{language}", "korean");
+                case EN -> template = template.replace("{language}", "english");
+            }
+            HttpHeaders headers = chatGptConfig.httpHeaders();
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", aiModel);
+            requestBody.put("messages", new Object[]{
+                    Map.of("role", "system", "content", template),
+                    Map.of("role", "user", "content", story)
+            });
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+
+            ResponseEntity<String> response = chatGptConfig.restTemplate().exchange(apiUrl, HttpMethod.POST, request, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                StoryDto.ChatGptResponse chatGptResponse = objectMapper.readValue(response.getBody(), new TypeReference<StoryDto.ChatGptResponse>(){});
+                return chatGptResponse.getChoices().get(0).getMessage().getContent();
+            } else {
+                throw new StoryException(StoryErrorCode.QUESTION_GENERATION_FAILED);
+            }
+        } catch (IOException e) {
+            throw new StoryException(StoryErrorCode.QUESTION_GENERATION_FAILED);
+        }
+    }
+
+    /**
+     * 동화 질문 생성
+     */
+    @Transactional
+    public String generateQuestions(String storyId) {
+        Story story = storyRepository.findById(storyId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
+        );
+        return sendQuestionRequest(story.getLanguage(), story.getAge(), story.getContent());
+    }
 }

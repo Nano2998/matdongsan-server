@@ -16,4 +16,5 @@ public class PromptsConfig {
     private Map<Integer, String> ko;
     private String storyElements;
     private String translation;
+    private String question;
 }

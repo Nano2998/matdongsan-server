@@ -80,4 +80,13 @@ public class StoryController {
         storyService.removeLike(storyId, SecurityUtils.getLoggedInMemberId());
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "동화 질문 생성")
+    @GetMapping("/questions/{storyId}")
+    public ResponseEntity<String> generateQuestions(
+            @PathVariable String storyId
+    ) {
+        return ResponseEntity.ok()
+                .body(storyService.generateQuestions(storyId));
+    }
 }
