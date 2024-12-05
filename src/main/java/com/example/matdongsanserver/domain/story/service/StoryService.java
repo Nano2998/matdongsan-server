@@ -9,13 +9,16 @@ import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
+import com.example.matdongsanserver.domain.story.entity.QuestionAnswerPair;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
+import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
+import com.example.matdongsanserver.domain.story.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,8 +31,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -62,6 +69,7 @@ public class StoryService {
     private final MemberRepository memberRepository;
     private final StoryLikeRepository storyLikeRepository;
     private final LibraryService libraryService;
+    private final StoryQuestionRepository storyQuestionRepository;
 
     private static final double TEMPERATURE = 0.9;
     private static final double TTS_SPEED = 0.95;
@@ -427,10 +435,38 @@ public class StoryService {
      * 동화 질문 생성
      */
     @Transactional
-    public String generateQuestions(String storyId) {
+    public StoryDto.StoryQuestionResponse generateQuestions(String storyId, Long memberId) {
         Story story = storyRepository.findById(storyId).orElseThrow(
                 () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
         );
-        return sendQuestionRequest(story.getLanguage(), story.getAge(), story.getContent());
+        List<QuestionAnswerPair> questionAnswerPairs = parseQuestion(sendQuestionRequest(story.getLanguage(), story.getAge(), story.getContent()));
+
+        return StoryDto.StoryQuestionResponse.builder()
+                .storyquestion(storyQuestionRepository.save(StoryQuestion.builder()
+                        .questionAnswerPairs(questionAnswerPairs)
+                        .member(memberRepository.findById(memberId).orElseThrow(
+                                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+                        ))
+                        .build()))
+                .build();
+    }
+
+    public static List<QuestionAnswerPair> parseQuestion(String input) {
+        Pattern pattern = Pattern.compile("(Q\\d+):\\s*(.+?)\\s*A\\d+:\\s*(.+?)(?=(\\s*Q\\d+:|$))", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(input);
+
+        List<QuestionAnswerPair> questionAnswerPairs = new ArrayList<>();
+
+        while (matcher.find()) {
+            String question = matcher.group(2).trim();
+            String answer = matcher.group(3).trim();
+            QuestionAnswerPair pair = QuestionAnswerPair.builder()
+                    .question(question)
+                    .sampleAnswer(answer)
+                    .build();
+            questionAnswerPairs.add(pair);
+        }
+
+        return questionAnswerPairs;
     }
 }
