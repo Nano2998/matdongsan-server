@@ -22,6 +22,7 @@ import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.story.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,8 +37,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -277,8 +276,6 @@ public class StoryService {
         } else if (language == Language.KO) {
             String template = promptsConfig.getKo().get(age);
             if (template != null) {
-                //String storyElements = storyElementsTemplate.replace("{given}", given).replace("{age}", String.valueOf(age));
-                //return template.replace("{story_elements}", storyElements);
                 return template.replace("{given}", given);
             }
             throw new StoryException(StoryErrorCode.INVALID_AGE);
@@ -293,7 +290,7 @@ public class StoryService {
     private int getMaxTokensForAgeEn(int age) {
         return switch (age) {
             case 3, 4 -> 250;
-            case 5, 6 -> 400;
+            case 5, 6 -> 450;
             case 7 -> 700;
             case 8 -> 750;
             default -> throw new StoryException(StoryErrorCode.INVALID_AGE);
@@ -324,6 +321,7 @@ public class StoryService {
                 requestBody.put("model", aiModel);
             }
             requestBody.put("max_tokens", maxTokens);
+            requestBody.put("response_format", Map.of("type", "json_object"));
             requestBody.put("temperature", TEMPERATURE);
             requestBody.put("messages", new Object[]{
                     Map.of("role", "system", "content", GENERATE_COMMAND),
@@ -354,16 +352,19 @@ public class StoryService {
      */
     private Map<String, String> parseStoryResponse(String response) {
         Map<String, String> parsedStory = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
 
-        String[] parts = response.split("Title: ", 2);
-        if (parts.length > 1) {
-            String[] titleAndContent = parts[1].split("\nContent: ", 2);
+        try {
+            JsonNode rootNode = objectMapper.readTree(response);
 
-            String title = titleAndContent[0].trim();
-            String content = titleAndContent.length > 1 ? titleAndContent[1].trim() : "";
+            String title = rootNode.path("title").asText().trim();
+            String content = rootNode.path("content").asText().trim();
 
             parsedStory.put("title", title);
             parsedStory.put("content", content);
+        } catch (Exception e) {
+            log.warn("Json parsing error: {}", response);
+            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
         }
 
         return parsedStory;
@@ -379,6 +380,7 @@ public class StoryService {
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", aiModel);
+            requestBody.put("response_format", Map.of("type", "json_object"));
             requestBody.put("messages", new Object[]{
                     Map.of("role", "system", "content", promptsConfig.getTranslation()),
                     Map.of("role", "user", "content", story)
@@ -415,6 +417,7 @@ public class StoryService {
             HttpHeaders headers = chatGptConfig.httpHeaders();
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", aiModel);
+            requestBody.put("response_format", Map.of("type", "json_object"));
             requestBody.put("messages", new Object[]{
                     Map.of("role", "system", "content", template),
                     Map.of("role", "user", "content", story)
@@ -465,23 +468,33 @@ public class StoryService {
      * 동화 질문 파싱
      */
     private List<QuestionAnswer> parseQuestion(String input, StoryQuestion storyQuestion) {
-        Pattern pattern = Pattern.compile("(Q\\d+):\\s*(.+?)\\s*A\\d+:\\s*(.+?)(?=(\\s*Q\\d+:|$))", Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(input);
+        try {
+            // JSON 문자열을 객체로 변환
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> jsonMap = objectMapper.readValue(input, new TypeReference<Map<String, String>>() {});
 
-        List<QuestionAnswer> questionAnswers = new ArrayList<>();
+            List<QuestionAnswer> questionAnswers = new ArrayList<>();
 
-        while (matcher.find()) {
-            String question = matcher.group(2).trim();
-            String answer = matcher.group(3).trim();
-            QuestionAnswer pair = questionAnswerRepository.save(QuestionAnswer.builder()
-                    .question(question)
-                    .sampleAnswer(answer)
-                    .storyQuestion(storyQuestion)
-                    .build());
-            questionAnswers.add(pair);
+            // Q와 A 키를 순회하며 매핑
+            for (int i = 1; i < 4; i++) {
+                String questionKey = "Q" + i;
+                String answerKey = "A" + i;
+
+                String question = jsonMap.get(questionKey).trim();
+                String answer = jsonMap.get(answerKey).trim();
+
+                QuestionAnswer pair = questionAnswerRepository.save(QuestionAnswer.builder()
+                        .question(question)
+                        .sampleAnswer(answer)
+                        .storyQuestion(storyQuestion)
+                        .build());
+                questionAnswers.add(pair);
+            }
+
+            return questionAnswers;
+        } catch (IOException e) {
+            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
         }
-
-        return questionAnswers;
     }
 
     /**
