@@ -3,6 +3,10 @@ package com.example.matdongsanserver.domain.module.service;
 import com.example.matdongsanserver.domain.module.exception.ModuleErrorCode;
 import com.example.matdongsanserver.domain.module.exception.ModuleException;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
+import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
+import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
+import com.example.matdongsanserver.domain.story.exception.StoryException;
+import com.example.matdongsanserver.domain.story.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -23,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ModuleService {
 
     private final StoryService storyService;
+    private final StoryQuestionRepository storyQuestionRepository;
 
     @Value("${module.address}")
     private String brokerAddress;
@@ -45,22 +50,20 @@ public class ModuleService {
         sendMqttMessage("only-play", storyTTS);
     }
 
-    /**
-     * 비동기로 처리하는 걸 고려해야함.
-     */
     @Transactional
-    public StoryDto.StoryQuestionResponse sendQuestion(String storyId, Long childId) {
-        StoryDto.StoryQuestionResponse storyQuestionResponse = storyService.generateQuestions(storyId, childId);
-        storyQuestionResponse.getQnAs().forEach(
-                o -> sendMqttMessage("play-and-record", storyService.getQuestionTTS(o.getId(), o.getQuestion(), storyQuestionResponse.getLanguage()))
+    public void sendQuestion(Long storyQuestionId) {
+        StoryQuestion storyQuestion = storyQuestionRepository.findById(storyQuestionId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.STORY_QUESTION_NOT_FOUND)
         );
-        return storyQuestionResponse;
+        storyQuestion.getQuestionAnswers().forEach(
+                qna -> sendMqttMessage("play-and-record", storyService.getQuestionTTS(qna.getId(), qna.getQuestion(), storyQuestion.getLanguage()))
+        );
     }
 
     private void sendMqttMessage(String action, String content) {
         String command = action + " " + content;
         MqttMessage message = new MqttMessage(command.getBytes());
-        message.setQos(1); // QoS 설정 (1 = 전달 보장)
+        message.setQos(1);
 
         try {
             client.publish(topic, message);

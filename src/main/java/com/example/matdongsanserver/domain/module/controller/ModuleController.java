@@ -25,13 +25,12 @@ public class ModuleController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "동화 질문 생성 및 모듈로 TTS 전송")
-    @GetMapping("/questions/{storyId}/{childId}")
-    public ResponseEntity<StoryDto.StoryQuestionResponse> generateQuestions(
-            @PathVariable String storyId,
-            @PathVariable Long childId
+    @Operation(summary = "모듈로 동화 질문 TTS 실행")
+    @GetMapping("/questions/{storyQuestionId}")
+    public ResponseEntity<Void> generateQuestions(
+            @PathVariable Long storyQuestionId
     ) {
-        return ResponseEntity.ok()
-                .body(moduleService.sendQuestion(storyId, childId));
+        moduleService.sendQuestion(storyQuestionId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -461,6 +461,7 @@ public class StoryService {
         List<QuestionAnswer> questionAnswers = parseQuestion(
                 sendQuestionRequest(story.getLanguage(), story.getAge(), story.getContent()), storyQuestion
         );
+
         return StoryDto.StoryQuestionResponse.builder()
                 .storyquestion(storyQuestion)
                 .build();
