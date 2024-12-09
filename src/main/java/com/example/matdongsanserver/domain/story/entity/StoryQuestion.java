@@ -2,7 +2,6 @@ package com.example.matdongsanserver.domain.story.entity;
 
 import com.example.matdongsanserver.common.model.BaseTimeEntity;
 import com.example.matdongsanserver.domain.member.entity.Child;
-import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,14 +28,17 @@ public class StoryQuestion extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "child_id")
-    private Child child;  // 추후에 자녀에게 저장하도록 수정 고려
+    private Child child;
 
     private String storyId;
 
     @Builder
-    public StoryQuestion(Child child, String storyId, Language language) {
-        this.child = child;
+    public StoryQuestion(String storyId, Language language) {
         this.storyId = storyId;
         this.language = language;
+    }
+
+    public void updateChild(Child child) {
+        this.child = child;
     }
 }

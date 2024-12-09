@@ -1,7 +1,6 @@
 package com.example.matdongsanserver.domain.module.controller;
 
 import com.example.matdongsanserver.domain.module.service.ModuleService;
-import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +24,13 @@ public class ModuleController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "모듈로 동화 질문 TTS 실행")
-    @GetMapping("/questions/{storyQuestionId}")
+    @Operation(summary = "모듈로 동화 질문 TTS 전송 및 응답")
+    @GetMapping("/questions/{storyQuestionId}/{childId}")
     public ResponseEntity<Void> generateQuestions(
-            @PathVariable Long storyQuestionId
+            @PathVariable Long storyQuestionId,
+            @PathVariable Long childId
     ) {
-        moduleService.sendQuestion(storyQuestionId);
+        moduleService.sendQuestion(storyQuestionId, childId);
         return ResponseEntity.noContent().build();
     }
 }

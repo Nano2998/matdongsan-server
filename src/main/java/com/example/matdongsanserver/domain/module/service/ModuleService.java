@@ -1,8 +1,10 @@
 package com.example.matdongsanserver.domain.module.service;
 
+import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
+import com.example.matdongsanserver.domain.member.exception.MemberException;
+import com.example.matdongsanserver.domain.member.repository.ChildRepository;
 import com.example.matdongsanserver.domain.module.exception.ModuleErrorCode;
 import com.example.matdongsanserver.domain.module.exception.ModuleException;
-import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
@@ -26,9 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ModuleService {
 
-    private final StoryService storyService;
-    private final StoryQuestionRepository storyQuestionRepository;
-
     @Value("${module.address}")
     private String brokerAddress;
 
@@ -36,6 +35,9 @@ public class ModuleService {
     private String topic;
 
     private IMqttClient client;
+    private final StoryService storyService;
+    private final StoryQuestionRepository storyQuestionRepository;
+    private final ChildRepository childRepository;
 
     @PostConstruct
     public void init() throws MqttException {
@@ -46,15 +48,21 @@ public class ModuleService {
 
     @Transactional
     public void sendStory(String storyId) {
-        String storyTTS = storyService.getStoryTTS(storyId);
+        String storyTTS = storyService.findOrCreateStoryTTS(storyId);
         sendMqttMessage("only-play", storyTTS);
     }
 
     @Transactional
-    public void sendQuestion(Long storyQuestionId) {
+    public void sendQuestion(Long storyQuestionId, Long childId) {
         StoryQuestion storyQuestion = storyQuestionRepository.findById(storyQuestionId).orElseThrow(
                 () -> new StoryException(StoryErrorCode.STORY_QUESTION_NOT_FOUND)
         );
+
+        // 질문에 응답하는 자녀를 설정
+        storyQuestion.updateChild(childRepository.findById(childId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND)
+        ));
+
         storyQuestion.getQuestionAnswers().forEach(
                 qna -> sendMqttMessage("play-and-record", storyService.getQuestionTTS(qna.getId(), qna.getQuestion(), storyQuestion.getLanguage()))
         );
