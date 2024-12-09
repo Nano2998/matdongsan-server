@@ -20,7 +20,7 @@ public class ModuleController {
     public ResponseEntity<Void> sendCommand(
             @PathVariable String storyId
     ) {
-        moduleService.sendCommand(storyId);
+        moduleService.sendStory(storyId);
         return ResponseEntity.noContent().build();
     }
 }

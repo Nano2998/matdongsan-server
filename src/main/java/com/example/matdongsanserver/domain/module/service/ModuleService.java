@@ -39,8 +39,17 @@ public class ModuleService {
     }
 
     @Transactional
-    public void sendCommand(String storyId) {
-        String command = "play-and-record " + storyService.getStoryTTS(storyId);
+    public void sendStory(String storyId) {
+        String storyTTS = storyService.getStoryTTS(storyId);
+        sendMqttMessage("play", storyTTS);
+    }
+
+    public void sendQuestion(String questionTTS) {
+        sendMqttMessage("play-and-record", questionTTS);
+    }
+
+    private void sendMqttMessage(String action, String content) {
+        String command = action + " " + content;
         MqttMessage message = new MqttMessage(command.getBytes());
         message.setQos(1); // QoS 설정 (1 = 전달 보장)
 
@@ -48,7 +57,7 @@ public class ModuleService {
             client.publish(topic, message);
             log.info("Sent command: {}", command);
         } catch (MqttException e) {
-            log.info("Failed to send command");
+            log.error("Failed to send command: {}", command, e);
             throw new ModuleException(ModuleErrorCode.FAILED_TO_CONNECT_MODULE);
         }
     }

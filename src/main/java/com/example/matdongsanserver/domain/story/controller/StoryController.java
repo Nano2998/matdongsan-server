@@ -82,11 +82,12 @@ public class StoryController {
     }
 
     @Operation(summary = "동화 질문 생성")
-    @GetMapping("/questions/{storyId}")
+    @GetMapping("/questions/{storyId}/{childId}")
     public ResponseEntity<StoryDto.StoryQuestionResponse> generateQuestions(
-            @PathVariable String storyId
+            @PathVariable String storyId,
+            @PathVariable Long childId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.generateQuestions(storyId, SecurityUtils.getLoggedInMemberId()));
+                .body(storyService.generateQuestions(storyId, childId));
     }
 }

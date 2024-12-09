@@ -1,7 +1,9 @@
 package com.example.matdongsanserver.domain.story.entity;
 
 import com.example.matdongsanserver.common.model.BaseTimeEntity;
+import com.example.matdongsanserver.domain.member.entity.Child;
 import com.example.matdongsanserver.domain.member.entity.Member;
+import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,18 +21,22 @@ public class StoryQuestion extends BaseTimeEntity {
     @Column(name = "story_question_id")
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    private Language language;
+
     @OneToMany(mappedBy = "storyQuestion", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuestionAnswer> questionAnswers = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;  // 추후에 자녀에게 저장하도록 수정 고려
+    @JoinColumn(name = "child_id")
+    private Child child;  // 추후에 자녀에게 저장하도록 수정 고려
 
     private String storyId;
 
     @Builder
-    public StoryQuestion(Member member, String storyId) {
-        this.member = member;
+    public StoryQuestion(Child child, String storyId, Language language) {
+        this.child = child;
         this.storyId = storyId;
+        this.language = language;
     }
 }

@@ -8,7 +8,9 @@ import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
+import com.example.matdongsanserver.domain.member.repository.ChildRepository;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
+import com.example.matdongsanserver.domain.module.service.ModuleService;
 import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
 import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
@@ -71,6 +73,8 @@ public class StoryService {
     private final LibraryService libraryService;
     private final StoryQuestionRepository storyQuestionRepository;
     private final QuestionAnswerRepository questionAnswerRepository;
+    private final ChildRepository childRepository;
+    private final ModuleService moduleService;
 
     private static final double TEMPERATURE = 0.9;
     private static final double TTS_SPEED = 0.95;
@@ -443,22 +447,24 @@ public class StoryService {
      * 동화 질문 생성
      */
     @Transactional
-    public StoryDto.StoryQuestionResponse generateQuestions(String storyId, Long memberId) {
+    public StoryDto.StoryQuestionResponse generateQuestions(String storyId, Long childId) {
         Story story = storyRepository.findById(storyId).orElseThrow(
                 () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
         );
 
         StoryQuestion storyQuestion = storyQuestionRepository.save(StoryQuestion.builder()
-                .member(memberRepository.findById(memberId).orElseThrow(
-                        () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+                .child(childRepository.findById(childId).orElseThrow(
+                        () -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND)
                 ))
                 .storyId(storyId)
+                .language(story.getLanguage())
                 .build());
 
         List<QuestionAnswer> questionAnswers = parseQuestion(
                 sendQuestionRequest(story.getLanguage(), story.getAge(), story.getContent()), storyQuestion
         );
 
+        getQuestionTTS(storyQuestion);
         return StoryDto.StoryQuestionResponse.builder()
                 .storyquestion(storyQuestion)
                 .build();
@@ -498,62 +504,53 @@ public class StoryService {
     }
 
     /**
-     * tts 변환 -> 추후에 비동기 처리 고민
+     * 동화 질문 tts로 변환후 전송 -> s3에 저장 후 링크 전송 처리 완료후 삭제 고려
      */
-//    @Transactional
-//    public String getQuestionTTS(String storyQuestionId) {
-//        try{
-//            Story story = storyRepository.findById(id)
-//                    .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
-//
-//            // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
-//            if(story.getLanguage() == Language.KO){
-//                throw new StoryException(StoryErrorCode.KOREAN_TTS_NOT_AVAILABLE);
-//            }
-//
-//            // 이미 ttsUrl이 저장되어 있다면 반환
-//            if (!story.getTtsUrl().isBlank()){
-//                return story.getTtsUrl();
-//            }
-//
-//            HttpHeaders headers = chatGptConfig.httpHeaders();
-//
-//            Map<String, Object> requestBody = new HashMap<>();
-//            requestBody.put("model", ttsModel);
-//            requestBody.put("voice", ttsVoice);
-//            requestBody.put("input", story.getContent());
-//            requestBody.put("speed", TTS_SPEED);
-//
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            String jsonBody = objectMapper.writeValueAsString(requestBody);
-//
-//            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
-//
-//            ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
-//
-//            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-//                String folderName = "tts/";
-//                String fileName = folderName + id + ".mp3";
-//
-//                ByteArrayInputStream inputStream = new ByteArrayInputStream(response.getBody());
-//
-//                ObjectMetadata metadata = new ObjectMetadata();
-//                metadata.setContentType("audio/mpeg");
-//                metadata.setContentLength(response.getBody().length);
-//
-//                // S3에 파일 업로드
-//                amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
-//                String ttsUrl = amazonS3.getUrl(bucketName, fileName).toString();
-//
-//                storyRepository.save(story.updateTTSUrl(ttsUrl));
-//
-//                //return new ByteArrayResource(response.getBody());
-//                return ttsUrl;
-//            } else {
-//                throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
-//            }
-//        } catch (IOException e) {
-//            throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
-//        }
-//    }
+    private void getQuestionTTS(StoryQuestion storyQuestion) {
+        try{
+            for (int i = 0; i < 3; i++) {
+                // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
+                if(storyQuestion.getLanguage() == Language.KO){
+                    throw new StoryException(StoryErrorCode.KOREAN_TTS_NOT_AVAILABLE);
+                }
+
+                HttpHeaders headers = chatGptConfig.httpHeaders();
+
+                Map<String, Object> requestBody = new HashMap<>();
+                requestBody.put("model", ttsModel);
+                requestBody.put("voice", ttsVoice);
+                requestBody.put("input", storyQuestion.getQuestionAnswers().get(i).getQuestion());
+                requestBody.put("speed", TTS_SPEED);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+                HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+
+                ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
+
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    String folderName = "tts_question/";
+                    String fileName = folderName + storyQuestion.getQuestionAnswers().get(i).getId() + ".mp3";
+
+                    ByteArrayInputStream inputStream = new ByteArrayInputStream(response.getBody());
+
+                    ObjectMetadata metadata = new ObjectMetadata();
+                    metadata.setContentType("audio/mpeg");
+                    metadata.setContentLength(response.getBody().length);
+
+                    // S3에 파일 업로드
+                    amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
+                    String questionTTS = amazonS3.getUrl(bucketName, fileName).toString();
+
+                    //모듈로 전송
+                    moduleService.sendQuestion(questionTTS);
+                } else {
+                    throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
+                }
+            }
+        } catch (IOException e) {
+            throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
+        }
+    }
 }
