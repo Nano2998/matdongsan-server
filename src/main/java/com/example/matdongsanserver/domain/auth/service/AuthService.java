@@ -1,5 +1,6 @@
 package com.example.matdongsanserver.domain.auth.service;
 
+import com.example.matdongsanserver.domain.auth.dto.KakaoInfo;
 import com.example.matdongsanserver.domain.auth.dto.LoginRequest;
 import com.example.matdongsanserver.domain.auth.dto.LoginResponse;
 import com.example.matdongsanserver.domain.auth.exception.AuthErrorCode;
@@ -83,10 +84,10 @@ public class AuthService {
     @Transactional
     public LoginResponse kakaoLogin(LoginRequest loginRequest) throws JsonProcessingException {
         log.info("Processing Kakao login for token.");
-        String email = getKakaoUserEmail(loginRequest.getToken());
-        validateLoginRequest(email, loginRequest.getEmail());
+        KakaoInfo kakaoInfo = getKakaoUserEmail(loginRequest.getToken());
+        validateLoginRequest(kakaoInfo.getEmail(), loginRequest.getEmail());
 
-        Member member = findOrCreateMember(email);
+        Member member = findOrCreateMember(kakaoInfo);
         log.info("Member retrieved or created. memberId={}, email={}", member.getId(), member.getEmail());
 
         TokenResponse tokenResponse = tokenProvider.createToken(
@@ -98,7 +99,7 @@ public class AuthService {
         return LoginResponse.builder()
                 .accessToken(tokenResponse.getAccessToken())
                 .refreshToken(tokenResponse.getRefreshToken())
-                .isFirstLogin(member.isFirstLogin())
+                .isChildRegistered(member.isChildRegistered())
                 .build();
     }
 
@@ -133,7 +134,7 @@ public class AuthService {
     /**
      * 카카오 서버에서 사용자 이메일 정보를 가져옴
      */
-    private String getKakaoUserEmail(final String token) throws JsonProcessingException {
+    private KakaoInfo getKakaoUserEmail(final String token) throws JsonProcessingException {
         log.info("Retrieving Kakao user email.");
         HttpEntity<MultiValueMap<String, String>> request = buildKakaoUserInfoRequest(token);
 
@@ -142,8 +143,12 @@ public class AuthService {
                     KAKAO_USER_INFO_URL, HttpMethod.POST, request, String.class);
 
             log.info("Successfully retrieved Kakao user email.");
-            return parseJsonNode(response.getBody())
-                    .get("kakao_account").get("email").asText();
+
+            return KakaoInfo.builder()
+                    .email(parseJsonNode(response.getBody()).get("kakao_account").get("email").asText())
+                    .nickname(parseJsonNode(response.getBody()).get("kakao_account").get("profile").get("nickname").asText())
+                    .profileImage(parseJsonNode(response.getBody()).get("kakao_account").get("profile").get("profile_image_url").asText())
+                    .build();
         } catch (HttpClientErrorException e) {
             log.error("Failed to retrieve Kakao user email: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
@@ -189,13 +194,13 @@ public class AuthService {
     /**
      * 회원을 찾거나 생성
      */
-    private Member findOrCreateMember(String email) {
-        return memberRepository.findByEmail(email)
+    private Member findOrCreateMember(KakaoInfo kakaoInfo) {
+        return memberRepository.findByEmail(kakaoInfo.getEmail())
                 .orElseGet(() -> memberRepository.save(
                         Member.builder()
-                                .email(email)
-                                .profileImage(null)
-                                .nickname(null)
+                                .email(kakaoInfo.getEmail())
+                                .profileImage(kakaoInfo.getProfileImage())
+                                .nickname(kakaoInfo.getNickname())
                                 .role(Role.USER)
                                 .build()));
     }

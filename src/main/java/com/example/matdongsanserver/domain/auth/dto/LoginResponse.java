@@ -11,12 +11,12 @@ public class LoginResponse{
 
     private String accessToken;
     private String refreshToken;
-    private boolean isFirstLogin;
+    private boolean isChildRegistered;
 
     @Builder
-    public LoginResponse(String accessToken, String refreshToken, boolean isFirstLogin) {
+    public LoginResponse(String accessToken, String refreshToken, boolean isChildRegistered) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
-        this.isFirstLogin = isFirstLogin;
+        this.isChildRegistered = isChildRegistered;
     }
 }

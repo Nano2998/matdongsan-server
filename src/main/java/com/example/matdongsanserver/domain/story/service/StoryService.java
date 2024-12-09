@@ -87,12 +87,10 @@ public class StoryService {
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
         );
         String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getGiven());
-        int maxTokens = 0;
-        if (requestDto.getLanguage() == Language.EN) {
-            maxTokens = getMaxTokensForAgeEn(requestDto.getAge());
-        } else if (requestDto.getLanguage() == Language.KO) {
-            maxTokens = getMaxTokensForAgeKo(requestDto.getAge());
-        }
+        int maxTokens = requestDto.getLanguage() == Language.EN
+                ? getMaxTokensForAgeEn(requestDto.getAge())
+                : getMaxTokensForAgeKo(requestDto.getAge());
+
         Map<String, String> parseStory = parseStoryResponse(sendOpenAiRequest(prompt, maxTokens, requestDto.getLanguage()));
         Story save = storyRepository.save(Story.builder()
                 .age(requestDto.getAge())
