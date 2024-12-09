@@ -2,6 +2,7 @@ package com.example.matdongsanserver.domain.module.service;
 
 import com.example.matdongsanserver.domain.module.exception.ModuleErrorCode;
 import com.example.matdongsanserver.domain.module.exception.ModuleException;
+import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -41,11 +42,19 @@ public class ModuleService {
     @Transactional
     public void sendStory(String storyId) {
         String storyTTS = storyService.getStoryTTS(storyId);
-        sendMqttMessage("play", storyTTS);
+        sendMqttMessage("only-play", storyTTS);
     }
 
-    public void sendQuestion(String questionTTS) {
-        sendMqttMessage("play-and-record", questionTTS);
+    /**
+     * 비동기로 처리하는 걸 고려해야함.
+     */
+    @Transactional
+    public StoryDto.StoryQuestionResponse sendQuestion(String storyId, Long childId) {
+        StoryDto.StoryQuestionResponse storyQuestionResponse = storyService.generateQuestions(storyId, childId);
+        storyQuestionResponse.getQnAs().forEach(
+                o -> sendMqttMessage("play-and-record", storyService.getQuestionTTS(o.getId(), o.getQuestion(), storyQuestionResponse.getLanguage()))
+        );
+        return storyQuestionResponse;
     }
 
     private void sendMqttMessage(String action, String content) {

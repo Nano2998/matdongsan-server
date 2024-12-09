@@ -10,7 +10,6 @@ import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.ChildRepository;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import com.example.matdongsanserver.domain.module.service.ModuleService;
 import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
 import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
@@ -74,7 +73,6 @@ public class StoryService {
     private final StoryQuestionRepository storyQuestionRepository;
     private final QuestionAnswerRepository questionAnswerRepository;
     private final ChildRepository childRepository;
-    private final ModuleService moduleService;
 
     private static final double TEMPERATURE = 0.9;
     private static final double TTS_SPEED = 0.95;
@@ -463,8 +461,6 @@ public class StoryService {
         List<QuestionAnswer> questionAnswers = parseQuestion(
                 sendQuestionRequest(story.getLanguage(), story.getAge(), story.getContent()), storyQuestion
         );
-
-        getQuestionTTS(storyQuestion);
         return StoryDto.StoryQuestionResponse.builder()
                 .storyquestion(storyQuestion)
                 .build();
@@ -506,48 +502,43 @@ public class StoryService {
     /**
      * 동화 질문 tts로 변환후 전송 -> s3에 저장 후 링크 전송 처리 완료후 삭제 고려
      */
-    private void getQuestionTTS(StoryQuestion storyQuestion) {
+    public String getQuestionTTS(Long questionId, String question, Language language) {
         try{
-            for (int i = 0; i < 3; i++) {
-                // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
-                if(storyQuestion.getLanguage() == Language.KO){
-                    throw new StoryException(StoryErrorCode.KOREAN_TTS_NOT_AVAILABLE);
-                }
+            // 현재는 영어 tts만 가능, 추후에 로직 추가 예정
+            if(language == Language.KO){
+                throw new StoryException(StoryErrorCode.KOREAN_TTS_NOT_AVAILABLE);
+            }
 
-                HttpHeaders headers = chatGptConfig.httpHeaders();
+            HttpHeaders headers = chatGptConfig.httpHeaders();
 
-                Map<String, Object> requestBody = new HashMap<>();
-                requestBody.put("model", ttsModel);
-                requestBody.put("voice", ttsVoice);
-                requestBody.put("input", storyQuestion.getQuestionAnswers().get(i).getQuestion());
-                requestBody.put("speed", TTS_SPEED);
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", ttsModel);
+            requestBody.put("voice", ttsVoice);
+            requestBody.put("input", question);
+            requestBody.put("speed", TTS_SPEED);
 
-                ObjectMapper objectMapper = new ObjectMapper();
-                String jsonBody = objectMapper.writeValueAsString(requestBody);
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
 
-                HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
-                ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
+            ResponseEntity<byte[]> response = chatGptConfig.restTemplate().exchange(ttsUrl, HttpMethod.POST, request, byte[].class);
 
-                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                    String folderName = "tts_question/";
-                    String fileName = folderName + storyQuestion.getQuestionAnswers().get(i).getId() + ".mp3";
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                String folderName = "tts_question/";
+                String fileName = folderName + questionId + ".mp3";
 
-                    ByteArrayInputStream inputStream = new ByteArrayInputStream(response.getBody());
+                ByteArrayInputStream inputStream = new ByteArrayInputStream(response.getBody());
 
-                    ObjectMetadata metadata = new ObjectMetadata();
-                    metadata.setContentType("audio/mpeg");
-                    metadata.setContentLength(response.getBody().length);
+                ObjectMetadata metadata = new ObjectMetadata();
+                metadata.setContentType("audio/mpeg");
+                metadata.setContentLength(response.getBody().length);
 
-                    // S3에 파일 업로드
-                    amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
-                    String questionTTS = amazonS3.getUrl(bucketName, fileName).toString();
-
-                    //모듈로 전송
-                    moduleService.sendQuestion(questionTTS);
-                } else {
-                    throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
-                }
+                // S3에 파일 업로드
+                amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
+                return amazonS3.getUrl(bucketName, fileName).toString();
+            } else {
+                throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
             }
         } catch (IOException e) {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);

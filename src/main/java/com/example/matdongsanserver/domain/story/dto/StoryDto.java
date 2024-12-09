@@ -152,11 +152,13 @@ public class StoryDto {
     public static class StoryQuestionResponse {
         private Long id;
         private String storyId;
+        private Language language;
         private List<QnAs> qnAs;
 
         @Builder
         public StoryQuestionResponse(StoryQuestion storyquestion) {
             this.id = storyquestion.getId();
+            this.language = storyquestion.getLanguage();
             this.storyId = storyquestion.getStoryId();
             this.qnAs = storyquestion.getQuestionAnswers()
                     .stream()
