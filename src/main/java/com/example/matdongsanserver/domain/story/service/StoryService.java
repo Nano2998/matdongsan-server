@@ -7,7 +7,6 @@ import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
-import com.example.matdongsanserver.domain.member.repository.ChildRepository;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.story.client.OpenAiClient;
 import com.example.matdongsanserver.domain.story.client.OpenAiTTSClient;
@@ -59,7 +58,6 @@ public class StoryService {
     private final StoryLikeRepository storyLikeRepository;
     private final StoryQuestionRepository storyQuestionRepository;
     private final QuestionAnswerRepository questionAnswerRepository;
-    private final ChildRepository childRepository;
     private final LibraryService libraryService;
 
     /**

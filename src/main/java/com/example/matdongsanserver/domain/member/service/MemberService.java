@@ -104,33 +104,31 @@ public class MemberService {
     }
 
     /**
-     * 자녀 생성
+     * 자녀 추가 -> 전체 자녀를 반환
      */
     @Transactional
-    public List<MemberDto.ChildDetail> registerChild(Long memberId, List<MemberDto.ChildCreationRequest> childCreationRequests) {
+    public List<MemberDto.ChildDetail> registerChild(Long memberId, MemberDto.ChildCreationRequest childCreationRequest) {
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
         );
 
-        List<MemberDto.ChildDetail> childDetails = new ArrayList<>();
+        if (childCreationRequest.getEnglishAge() < 3 || childCreationRequest.getEnglishAge() > 8 ||
+                childCreationRequest.getKoreanAge() < 3 || childCreationRequest.getKoreanAge() > 8) {
+            throw new MemberException(MemberErrorCode.INVALID_AGE);
+        }
+        childRepository.save(Child.builder()
+                .member(member)
+                .name(childCreationRequest.getName())
+                .birthday(childCreationRequest.getBirthday())
+                .englishAge(childCreationRequest.getEnglishAge())
+                .koreanAge(childCreationRequest.getKoreanAge())
+                .nickname(childCreationRequest.getNickname())
+                .build());
 
-        childCreationRequests.forEach(childCreationRequest -> {
-            if (childCreationRequest.getEnglishAge() < 3 || childCreationRequest.getEnglishAge() > 8 ||
-                    childCreationRequest.getKoreanAge() < 3 || childCreationRequest.getKoreanAge() > 8) {
-                throw new MemberException(MemberErrorCode.INVALID_AGE);
-            }
-            childDetails.add(MemberDto.ChildDetail.builder()
-                    .child(childRepository.save(Child.builder()
-                            .member(member)
-                            .name(childCreationRequest.getName())
-                            .birthday(childCreationRequest.getBirthday())
-                            .englishAge(childCreationRequest.getEnglishAge())
-                            .koreanAge(childCreationRequest.getKoreanAge())
-                            .nickname(childCreationRequest.getNickname())
-                            .build()))
-                    .build());
-        });
-        return childDetails;
+        return childRepository.findByMemberId(memberId)
+                .stream()
+                .map(MemberDto.ChildDetail::new)
+                .toList();
     }
 
     /**
