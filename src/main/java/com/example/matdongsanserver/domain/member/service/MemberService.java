@@ -107,22 +107,20 @@ public class MemberService {
      * 자녀 추가 -> 전체 자녀를 반환
      */
     @Transactional
-    public List<MemberDto.ChildDetail> registerChild(Long memberId, MemberDto.ChildCreationRequest childCreationRequest) {
+    public List<MemberDto.ChildDetail> registerChild(Long memberId, MemberDto.ChildRequest childRequest) {
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
         );
 
-        if (childCreationRequest.getEnglishAge() < 3 || childCreationRequest.getEnglishAge() > 8 ||
-                childCreationRequest.getKoreanAge() < 3 || childCreationRequest.getKoreanAge() > 8) {
+        if (childRequest.getEnglishAge() < 3 || childRequest.getEnglishAge() > 8 ||
+                childRequest.getKoreanAge() < 3 || childRequest.getKoreanAge() > 8) {
             throw new MemberException(MemberErrorCode.INVALID_AGE);
         }
         childRepository.save(Child.builder()
                 .member(member)
-                .name(childCreationRequest.getName())
-                .birthday(childCreationRequest.getBirthday())
-                .englishAge(childCreationRequest.getEnglishAge())
-                .koreanAge(childCreationRequest.getKoreanAge())
-                .nickname(childCreationRequest.getNickname())
+                .name(childRequest.getName())
+                .englishAge(childRequest.getEnglishAge())
+                .koreanAge(childRequest.getKoreanAge())
                 .build());
 
         return childRepository.findByMemberId(memberId)
@@ -135,6 +133,46 @@ public class MemberService {
      * 자녀 조회
      */
     public List<MemberDto.ChildDetail> getChildDetails(Long memberId) {
+        return childRepository.findByMemberId(memberId)
+                .stream()
+                .map(MemberDto.ChildDetail::new)
+                .toList();
+    }
+
+    /**
+     * 자녀 삭제
+     */
+    public void deleteChild(Long memberId, Long childId) {
+        Child child = childRepository.findById(childId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND)
+        );
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+        );
+
+        if(!member.getChildren().contains(child)) {
+            throw new MemberException(MemberErrorCode.CANNOT_ACCESS_CHILD);
+        }
+        member.removeChild(child);
+        childRepository.delete(child);
+    }
+
+    /**
+     * 자녀 정보 수정
+     */
+    public List<MemberDto.ChildDetail> updateChild(Long memberId, Long childId, MemberDto.ChildRequest childRequest) {
+        Child child = childRepository.findById(childId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND)
+        );
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+        );
+
+        if(!member.getChildren().contains(child)) {
+            throw new MemberException(MemberErrorCode.CANNOT_ACCESS_CHILD);
+        }
+
+        child.updateChild(childRequest.getName(), childRequest.getEnglishAge(), childRequest.getKoreanAge());
         return childRepository.findByMemberId(memberId)
                 .stream()
                 .map(MemberDto.ChildDetail::new)
