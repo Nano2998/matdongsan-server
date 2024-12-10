@@ -71,8 +71,13 @@ public class Member extends BaseTimeEntity {
         return !StringUtils.hasText(nickname);
     }
 
-    //자녀를 등록했는지
+    // 자녀를 등록했는지
     public boolean isChildRegistered() {
         return !children.isEmpty();
+    }
+
+    // 자녀 삭제
+    public void removeChild(Child child) {
+        this.children.remove(child);
     }
 }

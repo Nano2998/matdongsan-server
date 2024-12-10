@@ -57,6 +57,16 @@ public class MemberController {
                 .body(memberService.getChildDetails(SecurityUtils.getLoggedInMemberId()));
     }
 
+    @Operation(summary = "자녀 삭제")
+    @DeleteMapping("/children/{childId}")
+    public ResponseEntity<Void> deleteChild(
+            @PathVariable Long childId
+    ) {
+        memberService.deleteChild(SecurityUtils.getLoggedInMemberId(), childId);
+        return ResponseEntity.noContent()
+                .build();
+    }
+
     @Operation(summary = "팔로우")
     @PostMapping("/follow/{followerId}")
     public ResponseEntity<Void> follow(

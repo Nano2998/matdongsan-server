@@ -119,10 +119,8 @@ public class MemberService {
         childRepository.save(Child.builder()
                 .member(member)
                 .name(childCreationRequest.getName())
-                .birthday(childCreationRequest.getBirthday())
                 .englishAge(childCreationRequest.getEnglishAge())
                 .koreanAge(childCreationRequest.getKoreanAge())
-                .nickname(childCreationRequest.getNickname())
                 .build());
 
         return childRepository.findByMemberId(memberId)
@@ -139,6 +137,24 @@ public class MemberService {
                 .stream()
                 .map(MemberDto.ChildDetail::new)
                 .toList();
+    }
+
+    /**
+     * 자녀 삭제
+     */
+    public void deleteChild(Long memberId, Long childId) {
+        Child child = childRepository.findById(childId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND)
+        );
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
+        );
+
+        if(!member.getChildren().contains(child)) {
+            throw new MemberException(MemberErrorCode.CANNOT_ACCESS_CHILD);
+        }
+        member.removeChild(child);
+        childRepository.delete(child);
     }
 
     /**
