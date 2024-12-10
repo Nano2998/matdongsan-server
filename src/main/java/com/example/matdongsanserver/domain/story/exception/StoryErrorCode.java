@@ -22,7 +22,7 @@ public enum StoryErrorCode implements ErrorCode {
     LIKE_NOT_EXISTS(HttpStatus.NOT_FOUND, "좋아요가 존재하지 않습니다."),
     KOREAN_TTS_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "한글 TTS는 추후 지원  예정입니다."),
     INVALID_SORT_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 정렬 타입입니다."),
-    JSON_PARSING_ERROR(HttpStatus.BAD_REQUEST, "JSON 형식으로 파싱할 수 없습니다.");
+    JSON_PARSING_ERROR(HttpStatus.BAD_REQUEST, "JSON 형식으로 파싱할 수 없습니다."),
     INVALID_LANGUAGE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 언어 타입입니다." ),
     INVALID_AGE_TYPE(HttpStatus.BAD_REQUEST,"유효하지 않은 레벨 유형입니다." );
 
