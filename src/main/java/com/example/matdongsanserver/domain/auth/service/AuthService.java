@@ -1,5 +1,8 @@
 package com.example.matdongsanserver.domain.auth.service;
 
+import com.example.matdongsanserver.domain.auth.client.KakaoAuthClient;
+import com.example.matdongsanserver.domain.auth.client.KakaoUserInfoClient;
+import com.example.matdongsanserver.domain.auth.dto.KakaoInfo;
 import com.example.matdongsanserver.domain.auth.dto.LoginRequest;
 import com.example.matdongsanserver.domain.auth.dto.LoginResponse;
 import com.example.matdongsanserver.domain.auth.exception.AuthErrorCode;
@@ -14,25 +17,21 @@ import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -43,7 +42,8 @@ public class AuthService {
     private final TokenProvider tokenProvider;
     private final MemberRepository memberRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final RestTemplate restTemplate;
+    private final KakaoAuthClient kakaoAuthClient;
+    private final KakaoUserInfoClient kakaoUserInfoClient;
 
     @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
     private String clientId;
@@ -55,23 +55,30 @@ public class AuthService {
     private String redirectUri;
 
     private static final String REFRESH_HEADER = "refreshToken";
-    private static final String KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
-    private static final String KAKAO_USER_INFO_URL = "https://kapi.kakao.com/v2/user/me";
 
     /**
      * 인증 서버로부터 인증 코드를 통해 access 토큰을 받아오는 로직
+     *
+     * @param code
+     * @return
+     * @throws JsonProcessingException
      */
     public String getToken(final String code) throws JsonProcessingException {
         log.info("Attempting to retrieve Kakao access token for code: {}", code);
-        HttpEntity<MultiValueMap<String, String>> request = buildKakaoTokenRequest(code);
+
+        Map<String, String> requestParams = new HashMap<>();
+        requestParams.put("grant_type", "authorization_code");
+        requestParams.put("client_id", clientId);
+        requestParams.put("client_secret", clientSecret);
+        requestParams.put("redirect_uri", redirectUri);
+        requestParams.put("code", code);
 
         try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    KAKAO_TOKEN_URL, HttpMethod.POST, request, String.class);
+            ResponseEntity<String> response = kakaoAuthClient.getAccessToken(requestParams);
 
             log.info("Successfully retrieved Kakao access token.");
             return parseJsonNode(response.getBody()).get("access_token").asText();
-        } catch (HttpClientErrorException e) {
+        } catch (FeignException e) {
             log.error("Failed to retrieve Kakao access token: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
@@ -79,14 +86,18 @@ public class AuthService {
 
     /**
      * 카카오 로그인을 처리하는 로직
+     *
+     * @param loginRequest
+     * @return
+     * @throws JsonProcessingException
      */
     @Transactional
     public LoginResponse kakaoLogin(LoginRequest loginRequest) throws JsonProcessingException {
         log.info("Processing Kakao login for token.");
-        String email = getKakaoUserEmail(loginRequest.getToken());
-        validateLoginRequest(email, loginRequest.getEmail());
+        KakaoInfo kakaoInfo = getKakaoUserEmail(loginRequest.getToken());
+        validateLoginRequest(kakaoInfo.getEmail(), loginRequest.getEmail());
 
-        Member member = findOrCreateMember(email);
+        Member member = findOrCreateMember(kakaoInfo);
         log.info("Member retrieved or created. memberId={}, email={}", member.getId(), member.getEmail());
 
         TokenResponse tokenResponse = tokenProvider.createToken(
@@ -98,12 +109,15 @@ public class AuthService {
         return LoginResponse.builder()
                 .accessToken(tokenResponse.getAccessToken())
                 .refreshToken(tokenResponse.getRefreshToken())
-                .isFirstLogin(member.isFirstLogin())
+                .isChildRegistered(member.isChildRegistered())
                 .build();
     }
 
     /**
      * 리프레시 토큰을 통해 새로운 엑세스, 리프레시 토큰을 발급
+     *
+     * @param request
+     * @return
      */
     @Transactional
     public TokenResponse reissueAccessToken(final HttpServletRequest request) {
@@ -132,19 +146,24 @@ public class AuthService {
 
     /**
      * 카카오 서버에서 사용자 이메일 정보를 가져옴
+     *
+     * @param token
+     * @return
+     * @throws JsonProcessingException
      */
-    private String getKakaoUserEmail(final String token) throws JsonProcessingException {
+    private KakaoInfo getKakaoUserEmail(final String token) throws JsonProcessingException {
         log.info("Retrieving Kakao user email.");
-        HttpEntity<MultiValueMap<String, String>> request = buildKakaoUserInfoRequest(token);
-
         try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    KAKAO_USER_INFO_URL, HttpMethod.POST, request, String.class);
+            ResponseEntity<String> response = kakaoUserInfoClient.getUserInfo("Bearer " + token);
 
             log.info("Successfully retrieved Kakao user email.");
-            return parseJsonNode(response.getBody())
-                    .get("kakao_account").get("email").asText();
-        } catch (HttpClientErrorException e) {
+
+            return KakaoInfo.builder()
+                    .email(parseJsonNode(response.getBody()).get("kakao_account").get("email").asText())
+                    .nickname(parseJsonNode(response.getBody()).get("kakao_account").get("profile").get("nickname").asText())
+                    .profileImage(parseJsonNode(response.getBody()).get("kakao_account").get("profile").get("profile_image_url").asText())
+                    .build();
+        } catch (FeignException e) {
             log.error("Failed to retrieve Kakao user email: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
@@ -152,6 +171,8 @@ public class AuthService {
 
     /**
      * 리프레시 토큰 검증
+     *
+     * @param refreshToken
      */
     private void validateRefreshToken(String refreshToken) {
         if (!StringUtils.hasText(refreshToken) || !tokenProvider.validateToken(refreshToken)) {
@@ -166,6 +187,10 @@ public class AuthService {
 
     /**
      * 헤더에서 토큰 추출
+     *
+     * @param request
+     * @param headerName
+     * @return
      */
     private String getTokenFromHeader(final HttpServletRequest request, final String headerName) {
         String token = request.getHeader(headerName);
@@ -178,6 +203,9 @@ public class AuthService {
 
     /**
      * 요청에 대한 이메일 검증
+     *
+     * @param actualEmail
+     * @param expectedEmail
      */
     private void validateLoginRequest(String actualEmail, String expectedEmail) {
         if (!Objects.equals(actualEmail, expectedEmail)) {
@@ -188,20 +216,26 @@ public class AuthService {
 
     /**
      * 회원을 찾거나 생성
+     *
+     * @param kakaoInfo
+     * @return
      */
-    private Member findOrCreateMember(String email) {
-        return memberRepository.findByEmail(email)
+    private Member findOrCreateMember(KakaoInfo kakaoInfo) {
+        return memberRepository.findByEmail(kakaoInfo.getEmail())
                 .orElseGet(() -> memberRepository.save(
                         Member.builder()
-                                .email(email)
-                                .profileImage(null)
-                                .nickname(null)
+                                .email(kakaoInfo.getEmail())
+                                .profileImage(kakaoInfo.getProfileImage())
+                                .nickname(kakaoInfo.getNickname())
                                 .role(Role.USER)
                                 .build()));
     }
 
     /**
      * RefreshToken 엔티티 저장
+     *
+     * @param member
+     * @param refreshToken
      */
     private void saveRefreshToken(Member member, String refreshToken) {
         // 기존 토큰이 있다면 삭제
@@ -217,6 +251,9 @@ public class AuthService {
 
     /**
      * RefreshToken 엔티티 업데이트
+     *
+     * @param findToken
+     * @param newRefreshToken
      */
     private void updateRefreshToken(RefreshToken findToken, String newRefreshToken) {
         // 기존 토큰이 있다면 삭제
@@ -231,35 +268,11 @@ public class AuthService {
     }
 
     /**
-     * 카카오 토큰 요청 빌더
-     */
-    private HttpEntity<MultiValueMap<String, String>> buildKakaoTokenRequest(String code) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
-
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "authorization_code");
-        body.add("client_id", clientId);
-        body.add("client_secret", clientSecret);
-        body.add("redirect_uri", redirectUri);
-        body.add("code", code);
-
-        return new HttpEntity<>(body, headers);
-    }
-
-    /**
-     * 카카오 사용자 정보 요청 빌더
-     */
-    private HttpEntity<MultiValueMap<String, String>> buildKakaoUserInfoRequest(String token) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + token);
-        headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
-
-        return new HttpEntity<>(headers);
-    }
-
-    /**
      * JSON 응답 파싱
+     *
+     * @param json
+     * @return
+     * @throws JsonProcessingException
      */
     private JsonNode parseJsonNode(String json) throws JsonProcessingException {
         return new ObjectMapper().readTree(json);

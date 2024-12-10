@@ -23,7 +23,7 @@ public class StoryController {
             @RequestBody StoryDto.StoryCreationRequest requestDto
     ) {
         return ResponseEntity.ok()
-                .body(storyService.generateStory(SecurityUtils.getLoggedInMemberId(), requestDto));
+                .body(storyService.createStory(SecurityUtils.getLoggedInMemberId(), requestDto));
     }
 
     @Operation(summary = "동화 상세 수정")
@@ -60,7 +60,7 @@ public class StoryController {
             @PathVariable String storyId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.getStoryTTS(storyId));
+                .body(storyService.findOrCreateStoryTTS(storyId));
     }
 
     @Operation(summary = "동화 좋아요")
@@ -79,6 +79,15 @@ public class StoryController {
     ) {
         storyService.removeLike(storyId, SecurityUtils.getLoggedInMemberId());
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "동화 질문 생성")
+    @GetMapping("/questions/{storyId}")
+    public ResponseEntity<StoryDto.StoryQuestionResponse> generateQuestions(
+            @PathVariable String storyId
+    ) {
+        return ResponseEntity.ok()
+                .body(storyService.generateQuestions(storyId));
     }
 
     @GetMapping("/error")

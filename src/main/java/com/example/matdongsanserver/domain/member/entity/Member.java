@@ -70,4 +70,9 @@ public class Member extends BaseTimeEntity {
     public boolean isFirstLogin() {
         return !StringUtils.hasText(nickname);
     }
+
+    //자녀를 등록했는지
+    public boolean isChildRegistered() {
+        return !children.isEmpty();
+    }
 }

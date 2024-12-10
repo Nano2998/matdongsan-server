@@ -40,13 +40,13 @@ public class MemberController {
                 .body(memberService.getMemberDetail(SecurityUtils.getLoggedInMemberId()));
     }
 
-    @Operation(summary = "자녀 생성")
+    @Operation(summary = "자녀 추가")
     @PostMapping("/children")
     public ResponseEntity<List<MemberDto.ChildDetail>> registerChild(
-            @RequestBody List<MemberDto.ChildCreationRequest> childCreationRequests
+            @RequestBody MemberDto.ChildCreationRequest childCreationRequest
     ) {
         return ResponseEntity.ok()
-                .body(memberService.registerChild(SecurityUtils.getLoggedInMemberId(), childCreationRequests));
+                .body(memberService.registerChild(SecurityUtils.getLoggedInMemberId(), childCreationRequest));
     }
 
     @Operation(summary = "자녀 조회")
