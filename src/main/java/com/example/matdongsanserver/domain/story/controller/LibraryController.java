@@ -1,6 +1,8 @@
 package com.example.matdongsanserver.domain.story.controller;
 
 import com.example.matdongsanserver.domain.auth.util.SecurityUtils;
+import com.example.matdongsanserver.domain.story.AgeType;
+import com.example.matdongsanserver.domain.story.LangType;
 import com.example.matdongsanserver.domain.story.SortType;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.service.LibraryService;
@@ -22,14 +24,18 @@ public class LibraryController {
 
     private final LibraryService libraryService;
 
-    @Operation(summary = "전체 동화 리스트 조회")
+    @Operation(summary = "조건별 동화 리스트 조회")
     @GetMapping
     public ResponseEntity<Page<StoryDto.StorySummary>> getStories(
             @RequestParam(defaultValue = "recent") String sort,
+            @RequestParam(defaultValue = "all") String language,
+            @RequestParam(defaultValue = "main") String age,
             Pageable pageable
     ) {
         SortType sortType = SortType.fromString(sort);
-        return ResponseEntity.ok(libraryService.getStories(sortType, pageable));
+        LangType langType = LangType.fromString(language);
+        AgeType ageType = AgeType.fromString(age);
+        return ResponseEntity.ok(libraryService.getStories(ageType,langType, sortType, pageable));
     }
 
     @Operation(summary = "특정 작가의 동화 리스트 조회")
@@ -66,5 +72,14 @@ public class LibraryController {
     @GetMapping("/recent")
     public ResponseEntity<List<StoryDto.StorySummary>> getRecentStories() {
         return ResponseEntity.ok().body(libraryService.getRecentStories(SecurityUtils.getLoggedInMemberId()));
+    }
+
+    @Operation(summary = "동화 검색")
+    @GetMapping("/search")
+    public ResponseEntity<Page<StoryDto.StorySummary>> searchStories(
+            @RequestParam List<String> tags,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok().body(libraryService.searchStories(tags,pageable));
     }
 }

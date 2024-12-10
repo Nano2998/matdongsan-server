@@ -89,4 +89,9 @@ public class StoryController {
         return ResponseEntity.ok()
                 .body(storyService.generateQuestions(storyId));
     }
+
+    @GetMapping("/error")
+    public String error() {
+        throw new RuntimeException("이것이 에러다. 희망편");
+    }
 }

@@ -1,8 +1,11 @@
 package com.example.matdongsanserver.domain.story.service;
 
+import com.example.matdongsanserver.domain.story.AgeType;
+import com.example.matdongsanserver.domain.story.LangType;
 import com.example.matdongsanserver.domain.story.SortType;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
+import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,13 +33,27 @@ public class LibraryService {
     private static final int TTL_DAYS = 5; // TTL 설정
 
     /**
-     * 전체 동화 리스트 조회
+     * 조건별 동화 리스트 조회
+     * @param ageType
+     * @param langType
+     * @param sortType
+     * @param pageable
+     * @return
      */
-    public Page<StoryDto.StorySummary> getStories(SortType sortType, Pageable pageable) {
+    public Page<StoryDto.StorySummary> getStories(AgeType ageType, LangType langType, SortType sortType, Pageable pageable) {
+        List<Language> languages = switch (langType) {
+            case KO -> List.of(Language.KO);
+            case EN -> List.of(Language.EN);
+            case ALL -> List.of(Language.KO,Language.EN); // 기본값
+        };
+
+        int startAge = ageType.getStartAge() - 1; // between을 위한 값 수정
+        int endAge = ageType.getEndAge() + 1; // between을 위한 값 수정
+
         return switch (sortType) {
-            case POPULAR -> storyRepository.findByIsPublicTrueOrderByLikesDesc(pageable)
+            case POPULAR -> storyRepository.findByIsPublicTrueAndAgeBetweenAndLanguageInOrderByLikesDesc(startAge, endAge,languages, pageable)
                     .map(StoryDto.StorySummary::new);
-            case RECENT -> storyRepository.findByIsPublicTrueOrderByCreatedAtDesc(pageable)
+            case RECENT -> storyRepository.findByIsPublicTrueAndAgeBetweenAndLanguageInOrderByCreatedAtDesc(startAge, endAge,languages, pageable)
                     .map(StoryDto.StorySummary::new);
         };
     }
@@ -106,6 +123,7 @@ public class LibraryService {
      */
     public List<StoryDto.StorySummary> getRecentStories(Long memberId) {
         List<String> recentStoryIds = getRecentStoryIds(memberId);
+        log.warn("무야호");
         return storyRepository.findByIdIn(recentStoryIds)
                 .stream()
                 .map(StoryDto.StorySummary::new)
@@ -116,4 +134,17 @@ public class LibraryService {
         String redisKey = "user:" + memberId + ":recentTales";
         return redisTemplate.opsForList().range(redisKey, 0, -1);
     }
+
+    /**
+     * 동화 검색
+     * @param tags
+     * @param pageable
+     * @return
+     */
+    public Page<StoryDto.StorySummary> searchStories(List<String> tags, Pageable pageable) {
+
+        return storyRepository.findByTags(tags, pageable)
+                .map(StoryDto.StorySummary::new);
+    }
+
 }
