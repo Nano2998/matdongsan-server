@@ -149,6 +149,7 @@ public class StoryService {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
         libraryService.addRecentStories(memberId, storyId);
+
         return StoryDto.StoryDetail.builder()
                 .story(story)
                 .build();

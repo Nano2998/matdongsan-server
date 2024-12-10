@@ -123,6 +123,7 @@ public class LibraryService {
      */
     public List<StoryDto.StorySummary> getRecentStories(Long memberId) {
         List<String> recentStoryIds = getRecentStoryIds(memberId);
+        log.warn("무야호");
         return storyRepository.findByIdIn(recentStoryIds)
                 .stream()
                 .map(StoryDto.StorySummary::new)
