@@ -112,6 +112,7 @@ public class MemberService {
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
         );
 
+        // 나이 검사
         if (childRequest.getEnglishAge() < 3 || childRequest.getEnglishAge() > 8 ||
                 childRequest.getKoreanAge() < 3 || childRequest.getKoreanAge() > 8) {
             throw new MemberException(MemberErrorCode.INVALID_AGE);
@@ -142,6 +143,7 @@ public class MemberService {
     /**
      * 자녀 삭제
      */
+    @Transactional
     public void deleteChild(Long memberId, Long childId) {
         Child child = childRepository.findById(childId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND)
@@ -160,6 +162,7 @@ public class MemberService {
     /**
      * 자녀 정보 수정
      */
+    @Transactional
     public List<MemberDto.ChildDetail> updateChild(Long memberId, Long childId, MemberDto.ChildRequest childRequest) {
         Child child = childRepository.findById(childId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND)
@@ -170,6 +173,12 @@ public class MemberService {
 
         if(!member.getChildren().contains(child)) {
             throw new MemberException(MemberErrorCode.CANNOT_ACCESS_CHILD);
+        }
+
+        // 나이 검사
+        if (childRequest.getEnglishAge() < 3 || childRequest.getEnglishAge() > 8 ||
+                childRequest.getKoreanAge() < 3 || childRequest.getKoreanAge() > 8) {
+            throw new MemberException(MemberErrorCode.INVALID_AGE);
         }
 
         child.updateChild(childRequest.getName(), childRequest.getEnglishAge(), childRequest.getKoreanAge());
