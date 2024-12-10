@@ -43,10 +43,10 @@ public class MemberController {
     @Operation(summary = "자녀 추가")
     @PostMapping("/children")
     public ResponseEntity<List<MemberDto.ChildDetail>> registerChild(
-            @RequestBody MemberDto.ChildCreationRequest childCreationRequest
+            @RequestBody MemberDto.ChildRequest childRequest
     ) {
         return ResponseEntity.ok()
-                .body(memberService.registerChild(SecurityUtils.getLoggedInMemberId(), childCreationRequest));
+                .body(memberService.registerChild(SecurityUtils.getLoggedInMemberId(), childRequest));
     }
 
     @Operation(summary = "자녀 조회")
@@ -65,6 +65,16 @@ public class MemberController {
         memberService.deleteChild(SecurityUtils.getLoggedInMemberId(), childId);
         return ResponseEntity.noContent()
                 .build();
+    }
+
+    @Operation(summary = "자녀 정보 수정")
+    @PatchMapping("/children/{childId}")
+    public ResponseEntity<List<MemberDto.ChildDetail>> updateChild(
+            @PathVariable Long childId,
+            @RequestBody MemberDto.ChildRequest childRequest
+    ) {
+        return ResponseEntity.ok()
+                .body(memberService.updateChild(SecurityUtils.getLoggedInMemberId(), childId, childRequest));
     }
 
     @Operation(summary = "팔로우")

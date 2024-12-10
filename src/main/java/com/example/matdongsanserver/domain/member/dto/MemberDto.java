@@ -5,8 +5,6 @@ import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
 import lombok.*;
 
-import java.time.LocalDate;
-
 public class MemberDto {
 
     @Getter
@@ -38,7 +36,7 @@ public class MemberDto {
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
-    public static class ChildCreationRequest {
+    public static class ChildRequest {
         private String name;
         private Integer englishAge;
         private Integer koreanAge;

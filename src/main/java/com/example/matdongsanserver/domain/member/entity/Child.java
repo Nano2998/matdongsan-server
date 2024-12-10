@@ -4,8 +4,6 @@ import com.example.matdongsanserver.common.model.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
-
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -35,5 +33,11 @@ public class Child extends BaseTimeEntity {
         this.member = member;
         // 양방향 관계 설정
         this.member.addChild(this);
+    }
+
+    public void updateChild(String name, Integer englishAge, Integer koreanAge) {
+        this.name = name;
+        this.englishAge = englishAge;
+        this.koreanAge = koreanAge;
     }
 }
