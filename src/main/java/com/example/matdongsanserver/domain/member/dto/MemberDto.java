@@ -33,6 +33,7 @@ public class MemberDto {
         }
     }
 
+    @Builder
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
