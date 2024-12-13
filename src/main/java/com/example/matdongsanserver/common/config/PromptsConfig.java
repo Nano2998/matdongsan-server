@@ -17,4 +17,6 @@ public class PromptsConfig {
     private String translation;
     private String question;
     private String generateCommand;
+    private String generateSummary;
+    private String generateImage;
 }

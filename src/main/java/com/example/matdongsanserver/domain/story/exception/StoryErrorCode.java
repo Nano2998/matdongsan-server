@@ -13,6 +13,7 @@ public enum StoryErrorCode implements ErrorCode {
     INVALID_AGE(HttpStatus.BAD_REQUEST, "유효하지 않은 나이 입력입니다."),
     INVALID_LANGUAGE(HttpStatus.BAD_REQUEST, "유효하지 않은 언어 입력입니다."),
     STORY_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "동화 생성에 실패하였습니다."),
+    STORY_SUMMARY_FAILED(HttpStatus.BAD_REQUEST, "동화 요약에 실패하였습니다."),
     QUESTION_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "질문 생성에 실패하였습니다."),
     STORY_TRANSLATION_FAILED(HttpStatus.BAD_REQUEST, "동화 번역에 실패하였습니다."),
     TTS_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "TTS 생성에 실패하였습니다."),

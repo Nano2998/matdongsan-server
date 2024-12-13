@@ -81,6 +81,10 @@ public class StoryService {
         String responseContent = sendStoryCreationRequest(prompt, maxTokens, requestDto.getLanguage());
         Map<String, String> storyDetails = parseStoryResponse(responseContent);
 
+        // 동화 요약
+        String summary = sendSummaryRequest(storyDetails.get("content"));
+        System.out.println(summary);
+
         Story save = storyRepository.save(Story.builder()
                 .age(requestDto.getAge())
                 .language(requestDto.getLanguage())
@@ -549,5 +553,30 @@ public class StoryService {
         } else {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }
+    }
+
+    /**
+     * 동화 요약 요청을 전송
+     */
+    private String sendSummaryRequest(String content) {
+        String template = promptsConfig.getGenerateSummary().replace("{story}", content);
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "gpt-4o-mini");
+        requestBody.put("temperature", 0.7);
+        requestBody.put("messages", new Object[]{
+                Map.of("role", "system", "content", "You are making a prompt for an image generation model which image will be used as children's book cover."),
+                Map.of("role", "user", "content", template)
+        });
+
+        ResponseEntity<String> response = openAIClient.sendChatRequest(
+                "Bearer " + apiKey,
+                "application/json",
+                requestBody
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new StoryException(StoryErrorCode.STORY_SUMMARY_FAILED);
+        }
+        return parseChatGptResponse(response.getBody());
     }
 }
