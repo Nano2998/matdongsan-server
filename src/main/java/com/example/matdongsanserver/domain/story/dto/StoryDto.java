@@ -32,6 +32,7 @@ public class StoryDto {
         }
     }
 
+    @Builder
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)

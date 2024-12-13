@@ -78,18 +78,18 @@ class MemberServiceTest {
     @Test
     @DisplayName("자녀 삭제 성공")
     void deleteChild() {
-        //Given
+        // Given
         Member member = createAndSaveMember();
         MemberDto.ChildRequest childRequest1 = createChildRequest("테스트1", 4, 4);
         MemberDto.ChildRequest childRequest2 = createChildRequest("테스트2", 3, 3);
 
-        //when
+        // When
         List<MemberDto.ChildDetail> registerFirstChild = memberService.registerChild(member.getId(), childRequest1);
         List<MemberDto.ChildDetail> registerSecondChild = memberService.registerChild(member.getId(), childRequest2);
         assertThat(memberService.getChildDetails(member.getId())).hasSize(2);
         memberService.deleteChild(member.getId(),registerSecondChild.get(0).getId());
 
-        //Then
+        // Then
         assertThat(memberService.getChildDetails(member.getId())).hasSize(1);
     }
 
@@ -114,7 +114,7 @@ class MemberServiceTest {
     	Long nonExistMemberId = 1L;
         MemberDto.ChildRequest childRequest1 = createChildRequest("테스트", 4, 4);
 
-        //when & Then
+        // When & Then
         MemberException memberException = assertThrows(MemberException.class, () -> {
             memberService.registerChild(nonExistMemberId,childRequest1);
         });
@@ -129,8 +129,10 @@ class MemberServiceTest {
         MemberDto.ChildRequest childRequest = createChildRequest("test", 4, 4);
         List<MemberDto.ChildDetail> registerChild = memberService.registerChild(member.getId(), childRequest);
         MemberDto.ChildRequest childRequest2 = createChildRequest("NameChange", 4, 4);
+
         // When
         List<MemberDto.ChildDetail> childDetails = memberService.updateChild(member.getId(), registerChild.get(0).getId(), childRequest2);
+
         // Then
         assertThat(childDetails.get(0).getName()).isEqualTo("NameChange");
     }
@@ -141,10 +143,12 @@ class MemberServiceTest {
         // Given
         Member member = createAndSaveMember();
         MemberDto.ChildRequest childRequest = createChildRequest("test", 2, 2);
+
         // When
         MemberException memberException = assertThrows(MemberException.class, () -> {
             memberService.registerChild(member.getId(), childRequest);
         });
+
         // Then
         assertThat(memberException.getErrorCode()).isEqualTo(MemberErrorCode.INVALID_AGE);
     }
@@ -221,10 +225,12 @@ class MemberServiceTest {
         // Given
         Member member = createAndSaveMember();
         Member member2 = createAndSaveMember2();
+
         // When
         MemberException memberException = assertThrows(MemberException.class, () -> {
             memberService.unfollow(member.getId(), member2.getId());
         });
+
         // Then
         assertThat(memberException.getErrorCode()).isEqualTo(MemberErrorCode.FOLLOW_NOT_EXISTS);
     }
