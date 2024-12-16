@@ -38,10 +38,10 @@ public class ModuleController {
 
     @Operation(summary = "모듈로 아이의 응답을 받아서 STT로 전송 및 저장")
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> uploadAnswer(
+    public ResponseEntity<String> uploadAnswer(
             @RequestPart("file")MultipartFile file
     ) {
-        moduleService.uploadAnswer(file);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok()
+                .body(moduleService.uploadAnswer(file));
     }
 }

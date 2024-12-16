@@ -23,10 +23,6 @@ public class QuestionAnswer extends BaseTimeEntity {
     @JoinColumn(name = "story_question_id")
     private StoryQuestion storyQuestion;
 
-    public void updateAnswer(String newAnswer) {
-        this.answer = newAnswer;
-    }
-
     @Builder
     public QuestionAnswer(String question, String sampleAnswer, StoryQuestion storyQuestion) {
         this.question = question;
@@ -34,5 +30,10 @@ public class QuestionAnswer extends BaseTimeEntity {
         this.storyQuestion = storyQuestion;
 
         storyQuestion.getQuestionAnswers().add(this);
+    }
+
+    public String updateAnswer(String answer) {
+        this.answer = answer;
+        return answer;
     }
 }

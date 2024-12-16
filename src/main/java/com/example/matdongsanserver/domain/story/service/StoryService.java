@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -435,6 +436,7 @@ public class StoryService {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }
 
+        log.info("MP3 File uploaded: {}", amazonS3.getUrl(bucketName, fileName).toString());
         return amazonS3.getUrl(bucketName, fileName).toString();
     }
 
@@ -673,16 +675,22 @@ public class StoryService {
 
     /**
      * STT 요청 전송 및 응답을 저장
+     * @param file
      */
-    public void sendSTTRequest(MultipartFile file) {
+    @Transactional
+    public String sendSTTRequest(MultipartFile file) {
         ResponseEntity<String> response = openAIClient.sendSTTRequest(
                 "Bearer " + apiKey,
                 "whisper-1",
                 file
         );
+        Long questionId = Long.parseLong(Objects.requireNonNull(file.getOriginalFilename()).replace("-recorded.mp3", ""));
+        QuestionAnswer questionAnswer = questionAnswerRepository.findById(questionId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.INVALID_FILE_NAME)
+        );
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            System.out.println(parseSTTResponse(response.getBody()));
+            return questionAnswer.updateAnswer(parseSTTResponse(response.getBody()));
         } else {
             throw new StoryException(StoryErrorCode.STT_GENERATION_FAILED);
         }

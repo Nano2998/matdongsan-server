@@ -91,11 +91,12 @@ public class ModuleService {
         }
     }
 
-    public void uploadAnswer(MultipartFile file) {
+    @Transactional
+    public String uploadAnswer(MultipartFile file) {
         if (file.isEmpty()) {
             throw new ModuleException(ModuleErrorCode.INVALID_FILE);
         }
-        log.info("File name: {}", file.getName());
-        storyService.sendSTTRequest(file);
+        log.info("File name: {}", file.getOriginalFilename());
+        return storyService.sendSTTRequest(file);
     }
 }
