@@ -25,7 +25,8 @@ public enum StoryErrorCode implements ErrorCode {
     INVALID_SORT_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 정렬 타입입니다."),
     JSON_PARSING_ERROR(HttpStatus.BAD_REQUEST, "JSON 형식으로 파싱할 수 없습니다."),
     INVALID_LANGUAGE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 언어 타입입니다." ),
-    INVALID_AGE_TYPE(HttpStatus.BAD_REQUEST,"유효하지 않은 레벨 유형입니다." );
+    INVALID_AGE_TYPE(HttpStatus.BAD_REQUEST,"유효하지 않은 레벨 유형입니다." ),
+    STORY_IMAGE_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "이미지 생성 오류입니다."), STORY_IMAGE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "");
 
     private final HttpStatus httpStatus;
     private final String message;

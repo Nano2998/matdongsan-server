@@ -11,6 +11,13 @@ import java.util.Map;
 @FeignClient(name = "openAiTTSClient", url = "${openai.tts.url}")
 public interface OpenAiTTSClient {
 
+    /**
+     * TTS 생성용
+     * @param authorization
+     * @param contentType
+     * @param requestBody
+     * @return
+     */
     @PostMapping(consumes = "application/json", produces = "application/json")
     ResponseEntity<byte[]> sendTTSRequest(
             @RequestHeader("Authorization") String authorization,

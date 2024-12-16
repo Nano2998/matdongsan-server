@@ -78,6 +78,7 @@ public class StoryDto {
         private String title;
         private String content;
         private String author;
+        private String coverUrl;
 
         @Builder
         public StoryCreationResponse(Story story) {
@@ -85,6 +86,7 @@ public class StoryDto {
             this.title = story.getTitle();
             this.content = story.getContent();
             this.author = story.getAuthor();
+            this.coverUrl = story.getCoverUrl();
         }
     }
 
