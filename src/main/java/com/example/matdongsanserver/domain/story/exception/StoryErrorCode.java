@@ -13,6 +13,7 @@ public enum StoryErrorCode implements ErrorCode {
     INVALID_AGE(HttpStatus.BAD_REQUEST, "유효하지 않은 나이 입력입니다."),
     INVALID_LANGUAGE(HttpStatus.BAD_REQUEST, "유효하지 않은 언어 입력입니다."),
     STORY_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "동화 생성에 실패하였습니다."),
+    STORY_SUMMARY_FAILED(HttpStatus.BAD_REQUEST, "동화 요약에 실패하였습니다."),
     QUESTION_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "질문 생성에 실패하였습니다."),
     STORY_TRANSLATION_FAILED(HttpStatus.BAD_REQUEST, "동화 번역에 실패하였습니다."),
     TTS_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "TTS 생성에 실패하였습니다."),
@@ -24,7 +25,8 @@ public enum StoryErrorCode implements ErrorCode {
     INVALID_SORT_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 정렬 타입입니다."),
     JSON_PARSING_ERROR(HttpStatus.BAD_REQUEST, "JSON 형식으로 파싱할 수 없습니다."),
     INVALID_LANGUAGE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 언어 타입입니다." ),
-    INVALID_AGE_TYPE(HttpStatus.BAD_REQUEST,"유효하지 않은 레벨 유형입니다." );
+    INVALID_AGE_TYPE(HttpStatus.BAD_REQUEST,"유효하지 않은 레벨 유형입니다." ),
+    STORY_IMAGE_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "이미지 생성 오류입니다."), STORY_IMAGE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "");
 
     private final HttpStatus httpStatus;
     private final String message;

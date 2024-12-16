@@ -11,8 +11,29 @@ import java.util.Map;
 @FeignClient(name = "openAiClient", url = "${openai.api.url}")
 public interface OpenAiClient {
 
-    @PostMapping(consumes = "application/json", produces = "application/json")
+    /**
+     * 일반 요청용
+     * @param authorization
+     * @param contentType
+     * @param requestBody
+     * @return
+     */
+    @PostMapping(value = "/chat/completions", consumes = "application/json", produces = "application/json")
     ResponseEntity<String> sendChatRequest(
+            @RequestHeader("Authorization") String authorization,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestBody Map<String, Object> requestBody
+    );
+
+    /**
+     * 이미지 생성용
+     * @param authorization
+     * @param contentType
+     * @param requestBody
+     * @return
+     */
+    @PostMapping(value = "/images/generations", consumes = "application/json", produces = "application/json")
+    ResponseEntity<String> sendImageRequest(
             @RequestHeader("Authorization") String authorization,
             @RequestHeader("Content-Type") String contentType,
             @RequestBody Map<String, Object> requestBody

@@ -22,6 +22,7 @@ import com.example.matdongsanserver.domain.story.repository.QuestionAnswerReposi
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.story.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +34,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -89,8 +93,13 @@ public class StoryService {
                 .content(storyDetails.get("content"))
                 .memberId(memberId)
                 .author(member.getNickname())
-                .coverUrl("https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788934935018.jpg") //이미지 로직 추후 수정 필요
+                .coverUrl("")
                 .build());
+
+        // 동화 요약 및 커버 이미지 생성 요청
+        String summary = sendSummaryRequest(storyDetails.get("content"));
+        save.updateCoverurl(sendImageRequest(save.getId(), summary));
+        storyRepository.save(save);
 
         // 생성된 동화를 최근 동화에 포함
         libraryService.addRecentStories(memberId,save.getId());
@@ -548,6 +557,118 @@ public class StoryService {
             return uploadTTSToS3("tts_question/", String.valueOf(questionId), response.getBody());
         } else {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
+        }
+    }
+
+    /**
+     * 동화 요약 요청을 전송
+     *
+     * @param content
+     * @return
+     */
+    private String sendSummaryRequest(String content) {
+        String template = promptsConfig.getGenerateSummary().replace("{story}", content);
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "gpt-4o-mini");
+        requestBody.put("temperature", 0.7);
+        requestBody.put("messages", new Object[]{
+                Map.of("role", "system", "content", "You are making a prompt for an image generation model which image will be used as children's book cover."),
+                Map.of("role", "user", "content", template)
+        });
+
+        ResponseEntity<String> response = openAIClient.sendChatRequest(
+                "Bearer " + apiKey,
+                "application/json",
+                requestBody
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new StoryException(StoryErrorCode.STORY_SUMMARY_FAILED);
+        }
+        return parseChatGptResponse(response.getBody());
+    }
+
+    /**
+     * 동화 이미지 생성 요청을 전송
+     *
+     * @param scene
+     * @return
+     */
+    private String sendImageRequest(String scene, String storyId) {
+        String template = promptsConfig.getGenerateImage().replace("{scene}", scene);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "dall-e-3");
+        requestBody.put("prompt", template);
+        requestBody.put("quality", "standard");
+        requestBody.put("n", 1);
+        requestBody.put("size", "1024x1024");
+
+        ResponseEntity<String> response = openAIClient.sendImageRequest(
+                "Bearer " + apiKey,
+                "application/json",
+                requestBody
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
+        }
+        String imageUrl = parseImageResponse(response.getBody());
+        return uploadImageToS3("cover/", storyId, imageUrl);
+    }
+
+    /**
+     * 이미지 응답 파싱
+     *
+     * @param responseBody
+     * @return
+     */
+    private String parseImageResponse(String responseBody) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            JsonNode dataNode = rootNode.path("data");
+            if (dataNode.isArray() && !dataNode.isEmpty()) {
+                return dataNode.get(0).path("url").asText();
+            } else {
+                throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
+            }
+        } catch (JsonProcessingException e) {
+            throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
+        }
+    }
+
+    /**
+     * 생성된 이미지 URL에서 이미지를 S3에 업로드
+     *
+     * @param folderName
+     * @param storyId
+     * @param imageUrl
+     * @return
+     */
+    private String uploadImageToS3(String folderName, String storyId, String imageUrl) {
+        String fileName = folderName + storyId + ".png";
+
+        try (InputStream inputStream = new URL(imageUrl).openStream()) {
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentType("image/png");
+
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] chunk = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(chunk)) != -1) {
+                buffer.write(chunk, 0, bytesRead);
+            }
+            byte[] imageData = buffer.toByteArray();
+            metadata.setContentLength(imageData.length);
+
+            try (ByteArrayInputStream imageInputStream = new ByteArrayInputStream(imageData)) {
+                amazonS3.putObject(new PutObjectRequest(bucketName, fileName, imageInputStream, metadata));
+            }
+
+            return amazonS3.getUrl(bucketName, fileName).toString();
+        } catch (IOException e) {
+            throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
         }
     }
 }

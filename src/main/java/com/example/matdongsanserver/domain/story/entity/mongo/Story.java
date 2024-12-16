@@ -104,4 +104,8 @@ public class Story {
         this.likes --;
         return this;
     }
+
+    public void updateCoverurl(String coverUrl) {
+        this.coverUrl = coverUrl;
+    }
 }
