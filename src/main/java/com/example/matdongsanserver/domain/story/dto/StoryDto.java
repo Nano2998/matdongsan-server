@@ -41,35 +41,6 @@ public class StoryDto {
         private List<String> tags;
     }
 
-    @Builder
-    @Getter
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class ChatGptResponse {
-        private String id;
-        private List<ChoiceResponse> choices;
-    }
-
-    @Builder
-    @Getter
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class ChoiceResponse {
-        private MessageResponse message;
-    }
-
-    @Builder
-    @Getter
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class MessageResponse {
-        private String role;
-        private String content;
-    }
-
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)

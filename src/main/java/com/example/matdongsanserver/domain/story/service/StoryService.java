@@ -9,7 +9,6 @@ import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.story.client.OpenAiClient;
-import com.example.matdongsanserver.domain.story.client.OpenAiTTSClient;
 import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
 import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
@@ -32,6 +31,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -54,7 +55,6 @@ public class StoryService {
     private String bucketName;
 
     private final OpenAiClient openAIClient;
-    private final OpenAiTTSClient openAiTTSClient;
     private final PromptsConfig promptsConfig;
     private final AmazonS3 amazonS3;
     private final StoryRepository storyRepository;
@@ -399,7 +399,7 @@ public class StoryService {
         requestBody.put("input", story.getContent());
         requestBody.put("speed", 0.95);
 
-        ResponseEntity<byte[]> response = openAiTTSClient.sendTTSRequest(
+        ResponseEntity<byte[]> response = openAIClient.sendTTSRequest(
                 "Bearer " + apiKey,
                 "application/json",
                 requestBody
@@ -436,6 +436,7 @@ public class StoryService {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }
 
+        log.info("MP3 File uploaded: {}", amazonS3.getUrl(bucketName, fileName).toString());
         return amazonS3.getUrl(bucketName, fileName).toString();
     }
 
@@ -546,7 +547,7 @@ public class StoryService {
         requestBody.put("input", question);
         requestBody.put("speed", 0.95);
 
-        ResponseEntity<byte[]> response = openAiTTSClient.sendTTSRequest(
+        ResponseEntity<byte[]> response = openAIClient.sendTTSRequest(
                 "Bearer " + apiKey,
                 "application/json",
                 requestBody
@@ -669,6 +670,46 @@ public class StoryService {
             return amazonS3.getUrl(bucketName, fileName).toString();
         } catch (IOException e) {
             throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
+        }
+    }
+
+    /**
+     * STT 요청 전송 및 응답을 저장
+     * @param file
+     */
+    @Transactional
+    public String sendSTTRequest(MultipartFile file) {
+        ResponseEntity<String> response = openAIClient.sendSTTRequest(
+                "Bearer " + apiKey,
+                "whisper-1",
+                file
+        );
+        Long questionId = Long.parseLong(Objects.requireNonNull(file.getOriginalFilename()).replace("-recorded.mp3", ""));
+        QuestionAnswer questionAnswer = questionAnswerRepository.findById(questionId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.INVALID_FILE_NAME)
+        );
+
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return questionAnswer.updateAnswer(parseSTTResponse(response.getBody()));
+        } else {
+            throw new StoryException(StoryErrorCode.STT_GENERATION_FAILED);
+        }
+    }
+
+    /**
+     * STT 응답 파싱
+     *
+     * @param response
+     * @return
+     */
+    private String parseSTTResponse(String response) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            JsonNode rootNode = objectMapper.readTree(response);
+            return rootNode.path("text").asText().trim();
+        } catch (Exception e) {
+            log.warn("Json parsing error: {}", response);
+            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
         }
     }
 }
