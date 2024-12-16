@@ -28,9 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class MemberServiceTest {
 
     @Autowired
-    MemberService memberService;
-    @Autowired
     MemberRepository memberRepository;
+    @Autowired
+    MemberService memberService;
     @Autowired
     StoryRepository storyRepository;
     @Autowired
