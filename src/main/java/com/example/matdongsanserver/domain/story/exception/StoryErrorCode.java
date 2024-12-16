@@ -17,6 +17,7 @@ public enum StoryErrorCode implements ErrorCode {
     QUESTION_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "질문 생성에 실패하였습니다."),
     STORY_TRANSLATION_FAILED(HttpStatus.BAD_REQUEST, "동화 번역에 실패하였습니다."),
     TTS_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "TTS 생성에 실패하였습니다."),
+    STT_GENERATION_FAILED(HttpStatus.BAD_REQUEST, "STT 생성에 실패하였습니다."),
     INVALID_LANGUAGE_FOR_TRANSLATION(HttpStatus.BAD_REQUEST, "영어 동화만 번역 가능합니다."),
     STORY_EDIT_PERMISSION_DENIED(HttpStatus.BAD_REQUEST, "동화 수정 권한이 없습니다."),
     LIKE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 좋아요하였습니다."),

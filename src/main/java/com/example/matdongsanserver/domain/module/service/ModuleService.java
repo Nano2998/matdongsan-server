@@ -21,6 +21,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -88,5 +89,13 @@ public class ModuleService {
             client.disconnect();
             log.info("Disconnected from MQTT broker");
         }
+    }
+
+    public void uploadAnswer(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new ModuleException(ModuleErrorCode.INVALID_FILE);
+        }
+        log.info("File name: {}", file.getName());
+        storyService.sendSTTRequest(file);
     }
 }
