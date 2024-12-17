@@ -40,7 +40,7 @@ public class ParentController {
     }
 
     @Operation(summary = "QnA 상세보기")
-    @GetMapping("/{qnaId}")
+    @GetMapping("/detail/{qnaId}")
     public ResponseEntity<List<StoryDto.QnAs>> getQnaDetail(
             @PathVariable Long qnaId
     ) {
