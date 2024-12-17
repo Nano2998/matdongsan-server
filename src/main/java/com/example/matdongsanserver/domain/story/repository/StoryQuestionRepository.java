@@ -9,4 +9,6 @@ import java.util.List;
 
 public interface StoryQuestionRepository extends JpaRepository<StoryQuestion, Long> {
     Page<StoryQuestion> findAllByChildIdIn(List<Long> childIds,Pageable pageable);
+
+    Page<StoryQuestion> findByChildId(Long childId, Pageable pageable);
 }
