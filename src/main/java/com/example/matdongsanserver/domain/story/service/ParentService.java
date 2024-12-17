@@ -108,6 +108,8 @@ public class ParentService {
 
     /**
      * QnA 상세 조회하기
+     * @param qnaId
+     * @return
      */
     public List<StoryDto.QnAs> getQnaDetail(Long qnaId) {
 
