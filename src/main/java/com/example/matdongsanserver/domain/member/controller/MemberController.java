@@ -32,12 +32,21 @@ public class MemberController {
                 .body(memberService.updateMember(SecurityUtils.getLoggedInMemberId(), nickname, profileImage));
     }
 
-    @Operation(summary = "회원 조회")
+    @Operation(summary = "내 정보 조회")
     @GetMapping
     public ResponseEntity<MemberDto.MemberDetail> getMemberDetail(
     ) {
         return ResponseEntity.ok()
                 .body(memberService.getMemberDetail(SecurityUtils.getLoggedInMemberId()));
+    }
+
+    @Operation(summary = "다른 작가의 정보 조회")
+    @GetMapping("/{memberId}")
+    public ResponseEntity<MemberDto.MemberDetail> getOtherMemberDetail(
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok()
+                .body(memberService.getMemberDetail(memberId));
     }
 
     @Operation(summary = "자녀 추가")

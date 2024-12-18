@@ -92,15 +92,17 @@ public class StoryDto {
         private Language language;
         private List<String> tags;
         private LocalDateTime createdAt;
+        private Boolean isLiked;
 
         @Builder
-        public StoryDetail(Story story) {
+        public StoryDetail(Story story, Boolean isLiked) {
             super(story);
             this.content = story.getContent();
             this.age = story.getAge();
             this.language = story.getLanguage();
             this.tags = story.getTags();
             this.createdAt = story.getCreatedAt();
+            this.isLiked = isLiked;
         }
     }
 

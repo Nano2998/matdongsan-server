@@ -306,6 +306,7 @@ public class StoryService {
 
         return StoryDto.StoryDetail.builder()
                 .story(storyRepository.save(story))
+                .isLiked(storyLikeRepository.existsByStoryIdAndMemberId(storyId, memberId))
                 .build();
     }
 
@@ -325,6 +326,7 @@ public class StoryService {
 
         return StoryDto.StoryDetail.builder()
                 .story(story)
+                .isLiked(storyLikeRepository.existsByStoryIdAndMemberId(storyId, memberId))
                 .build();
     }
 
