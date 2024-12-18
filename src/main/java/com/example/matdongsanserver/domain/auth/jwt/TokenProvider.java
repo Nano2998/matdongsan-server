@@ -13,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.security.Key;
 import java.util.Arrays;
@@ -52,6 +51,10 @@ public class TokenProvider {
 
     /**
      * access, refresh Token 생성
+     * @param memberId
+     * @param email
+     * @param role
+     * @return
      */
     public TokenResponse createToken(Long memberId, String email, String role) {
         long now = (new Date()).getTime();
@@ -80,6 +83,8 @@ public class TokenProvider {
 
     /**
      * 토큰의 유효성 검사
+     * @param token
+     * @return
      */
     public boolean validateToken(String token) {
         try {
@@ -99,6 +104,8 @@ public class TokenProvider {
 
     /**
      * 토큰의 만료 여부 검사
+     * @param token
+     * @return
      */
     public boolean validateTokenExpired(String token) {
         try {
@@ -115,6 +122,8 @@ public class TokenProvider {
 
     /**
      * 토큰으로부터 Authentication 객체를 생성
+     * @param token
+     * @return
      */
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder()

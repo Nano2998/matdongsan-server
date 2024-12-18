@@ -58,7 +58,6 @@ public class AuthService {
 
     /**
      * 인증 서버로부터 인증 코드를 통해 access 토큰을 받아오는 로직
-     *
      * @param code
      * @return
      * @throws JsonProcessingException
@@ -86,13 +85,11 @@ public class AuthService {
 
     /**
      * 카카오 로그인을 처리하는 로직
-     *
      * @param loginRequest
      * @return
-     * @throws JsonProcessingException
      */
     @Transactional
-    public LoginResponse kakaoLogin(LoginRequest loginRequest) throws JsonProcessingException {
+    public LoginResponse kakaoLogin(LoginRequest loginRequest) {
         log.info("Processing Kakao login for token.");
         KakaoInfo kakaoInfo = getKakaoUserEmail(loginRequest.getToken());
         validateLoginRequest(kakaoInfo.getEmail(), loginRequest.getEmail());
@@ -115,7 +112,6 @@ public class AuthService {
 
     /**
      * 리프레시 토큰을 통해 새로운 엑세스, 리프레시 토큰을 발급
-     *
      * @param request
      * @return
      */
@@ -146,12 +142,10 @@ public class AuthService {
 
     /**
      * 카카오 서버에서 사용자 이메일 정보를 가져옴
-     *
      * @param token
      * @return
-     * @throws JsonProcessingException
      */
-    private KakaoInfo getKakaoUserEmail(final String token) throws JsonProcessingException {
+    private KakaoInfo getKakaoUserEmail(final String token) {
         log.info("Retrieving Kakao user email.");
         try {
             ResponseEntity<String> response = kakaoUserInfoClient.getUserInfo("Bearer " + token);
@@ -171,7 +165,6 @@ public class AuthService {
 
     /**
      * 리프레시 토큰 검증
-     *
      * @param refreshToken
      */
     private void validateRefreshToken(String refreshToken) {
@@ -187,7 +180,6 @@ public class AuthService {
 
     /**
      * 헤더에서 토큰 추출
-     *
      * @param request
      * @param headerName
      * @return
@@ -203,7 +195,6 @@ public class AuthService {
 
     /**
      * 요청에 대한 이메일 검증
-     *
      * @param actualEmail
      * @param expectedEmail
      */
@@ -216,7 +207,6 @@ public class AuthService {
 
     /**
      * 회원을 찾거나 생성
-     *
      * @param kakaoInfo
      * @return
      */
@@ -233,7 +223,6 @@ public class AuthService {
 
     /**
      * RefreshToken 엔티티 저장
-     *
      * @param member
      * @param refreshToken
      */
@@ -251,7 +240,6 @@ public class AuthService {
 
     /**
      * RefreshToken 엔티티 업데이트
-     *
      * @param findToken
      * @param newRefreshToken
      */
@@ -269,12 +257,15 @@ public class AuthService {
 
     /**
      * JSON 응답 파싱
-     *
      * @param json
      * @return
-     * @throws JsonProcessingException
      */
-    private JsonNode parseJsonNode(String json) throws JsonProcessingException {
-        return new ObjectMapper().readTree(json);
+    private JsonNode parseJsonNode(String json) {
+        try {
+            return new ObjectMapper().readTree(json);
+        } catch (JsonProcessingException e) {
+            throw new AuthException(AuthErrorCode.JSON_PARSING_ERROR);
+        }
+
     }
 }
