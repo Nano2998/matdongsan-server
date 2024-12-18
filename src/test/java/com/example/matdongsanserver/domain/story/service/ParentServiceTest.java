@@ -1,5 +1,9 @@
 package com.example.matdongsanserver.domain.story.service;
 
+import com.example.matdongsanserver.domain.child.dto.ChildDto;
+import com.example.matdongsanserver.domain.child.exception.ChildErrorCode;
+import com.example.matdongsanserver.domain.child.exception.ChildException;
+import com.example.matdongsanserver.domain.child.service.ChildService;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.child.entity.Child;
 import com.example.matdongsanserver.domain.member.entity.Member;
@@ -57,6 +61,8 @@ class ParentServiceTest {
     ParentService parentService;
     @Autowired
     ModuleService moduleService;
+    @Autowired
+    ChildService childService;
 
     @BeforeEach
     void setUp() {
@@ -78,13 +84,13 @@ class ParentServiceTest {
         createStory(member.getNickname(), member.getId(), "테스트 제목", Language.KO, 4);
 
         // 3. 자녀 등록
-        MemberDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
-        memberService.registerChild(member.getId(), childRequest);
-        List<MemberDto.ChildDetail> childDetails = memberService.getChildDetails(member.getId());
+        ChildDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
+        childService.registerChild(member.getId(), childRequest);
+        List<ChildDto.ChildDetail> childDetails = childService.getChildDetails(member.getId());
         Long childId = childDetails.get(0).getId();
 
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND));
+                .orElseThrow(() -> new ChildException(ChildErrorCode.CHILD_NOT_FOUND));
 
         // 4. 스토리 id 가져오기
         Page<StoryDto.StorySummary> stories = libraryService.getStories(AgeType.LV1, LangType.KO, SortType.RECENT, Pageable.unpaged());
@@ -114,19 +120,19 @@ class ParentServiceTest {
         createStory(member.getNickname(), member.getId(), "테스트 제목", Language.KO, 4);
 
         // 3. 자녀 등록
-        MemberDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
-        MemberDto.ChildRequest childRequest2 = createChildRequest("테스트2", 3, 3);
-        memberService.registerChild(member.getId(), childRequest);
-        memberService.registerChild(member.getId(), childRequest2);
-        List<MemberDto.ChildDetail> childDetails = memberService.getChildDetails(member.getId());
+        ChildDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
+        ChildDto.ChildRequest childRequest2 = createChildRequest("테스트2", 3, 3);
+        childService.registerChild(member.getId(), childRequest);
+        childService.registerChild(member.getId(), childRequest2);
+        List<ChildDto.ChildDetail> childDetails = childService.getChildDetails(member.getId());
         Long childId = childDetails.get(0).getId();
         Long childId2 = childDetails.get(1).getId();
 
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND));
+                .orElseThrow(() -> new ChildException(ChildErrorCode.CHILD_NOT_FOUND));
 
         Child child2= childRepository.findById(childId2)
-                .orElseThrow(() -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND));
+                .orElseThrow(() -> new ChildException(ChildErrorCode.CHILD_NOT_FOUND));
 
         // 4. 스토리 id 가져오기
         Page<StoryDto.StorySummary> stories = libraryService.getStories(AgeType.LV1, LangType.KO, SortType.RECENT, Pageable.unpaged());
@@ -158,13 +164,13 @@ class ParentServiceTest {
         createStory(member.getNickname(), member.getId(), "테스트 제목", Language.KO, 4);
 
         // 3. 자녀 등록
-        MemberDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
-        memberService.registerChild(member.getId(), childRequest);
-        List<MemberDto.ChildDetail> childDetails = memberService.getChildDetails(member.getId());
+        ChildDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
+        childService.registerChild(member.getId(), childRequest);
+        List<ChildDto.ChildDetail> childDetails = childService.getChildDetails(member.getId());
         Long childId = childDetails.get(0).getId();
 
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND));
+                .orElseThrow(() -> new ChildException(ChildErrorCode.CHILD_NOT_FOUND));
 
         // 4. 스토리 id 가져오기
         Page<StoryDto.StorySummary> stories = libraryService.getStories(AgeType.LV1, LangType.KO, SortType.RECENT, Pageable.unpaged());
@@ -207,8 +213,8 @@ class ParentServiceTest {
                 .build());
     }
     // 자녀 추가
-    private MemberDto.ChildRequest createChildRequest(String name, int englishAge, int koreanAge) {
-        return MemberDto.ChildRequest.builder()
+    private ChildDto.ChildRequest createChildRequest(String name, int englishAge, int koreanAge) {
+        return ChildDto.ChildRequest.builder()
                 .name(name)
                 .englishAge(englishAge)
                 .koreanAge(koreanAge)

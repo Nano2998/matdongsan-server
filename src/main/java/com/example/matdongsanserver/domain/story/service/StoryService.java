@@ -3,8 +3,6 @@ package com.example.matdongsanserver.domain.story.service;
 import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.common.utils.S3Utils;
 import com.example.matdongsanserver.domain.member.entity.Member;
-import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
-import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.story.client.OpenAiClient;
 import com.example.matdongsanserver.domain.story.client.TTSClient;
@@ -67,9 +65,7 @@ public class StoryService {
     @Transactional
     public StoryDto.StoryCreationResponse createStory(Long memberId, StoryDto.StoryCreationRequest requestDto) {
         Language language = Language.fromString(requestDto.getLanguage());
-        Member member = memberRepository.findById(memberId).orElseThrow(
-                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
-        );
+        Member member = memberRepository.findByIdOrThrow(memberId);
 
         // 프롬프트와 토큰 설정
         String prompt = getPromptForAge(requestDto.getAge(), language, requestDto.getGiven());
@@ -259,9 +255,7 @@ public class StoryService {
 
         storyLikeRepository.save(StoryLike.builder()
                 .storyId(storyId)
-                .member(memberRepository.findById(memberId).orElseThrow(
-                        () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
-                ))
+                .member(memberRepository.findByIdOrThrow(memberId))
                 .build());
 
         storyRepository.save(story.addLikes());

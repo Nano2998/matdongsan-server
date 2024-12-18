@@ -5,8 +5,6 @@ import com.example.matdongsanserver.domain.follow.exception.FollowErrorCode;
 import com.example.matdongsanserver.domain.follow.exception.FollowException;
 import com.example.matdongsanserver.domain.follow.repository.FollowRepository;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
-import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
-import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
