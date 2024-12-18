@@ -1,8 +1,6 @@
 package com.example.matdongsanserver.domain.module.service;
 
-import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
-import com.example.matdongsanserver.domain.member.exception.MemberException;
-import com.example.matdongsanserver.domain.member.repository.ChildRepository;
+import com.example.matdongsanserver.domain.child.repository.ChildRepository;
 import com.example.matdongsanserver.domain.module.exception.ModuleErrorCode;
 import com.example.matdongsanserver.domain.module.exception.ModuleException;
 import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
@@ -47,6 +45,14 @@ public class ModuleService {
         log.info("Init MQTT broker");
     }
 
+    @PreDestroy
+    public void disconnect() throws MqttException {
+        if (client != null && client.isConnected()) {
+            client.disconnect();
+            log.info("Disconnected from MQTT broker");
+        }
+    }
+
     @Transactional
     public void sendStory(String storyId) {
         String storyTTS = storyService.findOrCreateStoryTTS(storyId);
@@ -60,9 +66,7 @@ public class ModuleService {
         );
 
         // 질문에 응답하는 자녀를 설정
-        storyQuestion.updateChild(childRepository.findById(childId).orElseThrow(
-                () -> new MemberException(MemberErrorCode.CHILD_NOT_FOUND)
-        ));
+        storyQuestion.updateChild(childRepository.findByIdOrThrow(childId));
 
         storyQuestion.getQuestionAnswers().forEach(
                 qna -> sendMqttMessage("play-and-record", storyService.getQuestionTTS(qna.getId(), qna.getQuestion(), storyQuestion.getLanguage()))
@@ -80,14 +84,6 @@ public class ModuleService {
         } catch (MqttException e) {
             log.error("Failed to send command: {}", command, e);
             throw new ModuleException(ModuleErrorCode.FAILED_TO_CONNECT_MODULE);
-        }
-    }
-
-    @PreDestroy
-    public void disconnect() throws MqttException {
-        if (client != null && client.isConnected()) {
-            client.disconnect();
-            log.info("Disconnected from MQTT broker");
         }
     }
 

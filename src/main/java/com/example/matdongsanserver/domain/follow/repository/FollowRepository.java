@@ -1,6 +1,6 @@
-package com.example.matdongsanserver.domain.member.repository;
+package com.example.matdongsanserver.domain.follow.repository;
 
-import com.example.matdongsanserver.domain.member.entity.Follow;
+import com.example.matdongsanserver.domain.follow.entity.Follow;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

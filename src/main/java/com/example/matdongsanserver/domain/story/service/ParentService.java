@@ -1,7 +1,7 @@
 package com.example.matdongsanserver.domain.story.service;
 
-import com.example.matdongsanserver.domain.member.dto.MemberDto;
-import com.example.matdongsanserver.domain.member.entity.Member;
+import com.example.matdongsanserver.domain.child.dto.ChildDto;
+import com.example.matdongsanserver.domain.child.service.ChildService;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,6 +39,7 @@ public class ParentService {
     private final QuestionAnswerRepository questionAnswerRepository;
     private final LibraryService libraryService;
     private final MemberService memberService;
+    private final ChildService childService;
     private final StoryRepository storyRepository;
     private final StoryService storyService;
 
@@ -53,10 +53,10 @@ public class ParentService {
             throw new MemberException(MemberErrorCode.MEMBER_NOT_FOUND);
         }
 
-        List<MemberDto.ChildDetail> childDetails = memberService.getChildDetails(memberId);
+        List<ChildDto.ChildDetail> childDetails = childService.getChildDetails(memberId);
 
         List<Long> childIds = childDetails.stream()
-                .map(MemberDto.ChildDetail::getId)
+                .map(ChildDto.ChildDetail::getId)
                 .toList();
 
         Page<StoryQuestion> childQuestions = storyQuestionRepository.findAllByChildIdIn(childIds, pageable);

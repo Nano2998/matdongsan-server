@@ -1,6 +1,7 @@
-package com.example.matdongsanserver.domain.member.entity;
+package com.example.matdongsanserver.domain.follow.entity;
 
 import com.example.matdongsanserver.common.model.BaseTimeEntity;
+import com.example.matdongsanserver.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 

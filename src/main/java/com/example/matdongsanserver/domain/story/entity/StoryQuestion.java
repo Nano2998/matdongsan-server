@@ -1,7 +1,7 @@
 package com.example.matdongsanserver.domain.story.entity;
 
 import com.example.matdongsanserver.common.model.BaseTimeEntity;
-import com.example.matdongsanserver.domain.member.entity.Child;
+import com.example.matdongsanserver.domain.child.entity.Child;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import jakarta.persistence.*;
 import lombok.*;
