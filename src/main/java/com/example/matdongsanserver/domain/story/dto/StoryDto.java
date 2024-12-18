@@ -157,4 +157,19 @@ public class StoryDto {
             this.answer = questionAnswerPairs.getAnswer();
         }
     }
+
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class TTSCreationRequest {
+        private String file_name;
+        private String language;
+        private String text;
+
+        @Builder
+        public TTSCreationRequest(String file_name, String language, String text) {
+            this.file_name = file_name;
+            this.language = language;
+            this.text = text;
+        }
+    }
 }

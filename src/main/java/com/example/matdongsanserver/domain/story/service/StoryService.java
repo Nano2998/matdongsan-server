@@ -9,6 +9,7 @@ import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.story.client.OpenAiClient;
+import com.example.matdongsanserver.domain.story.client.TTSClient;
 import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
 import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
@@ -55,6 +56,7 @@ public class StoryService {
     private String bucketName;
 
     private final OpenAiClient openAIClient;
+    private final TTSClient ttsClient;
     private final PromptsConfig promptsConfig;
     private final AmazonS3 amazonS3;
     private final StoryRepository storyRepository;
@@ -164,7 +166,7 @@ public class StoryService {
      */
     private String sendStoryCreationRequest(String prompt, int maxTokens, Language language) {
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", language == Language.KO ? "gpt-4o-mini" : "chatgpt-4o-latest");
+        requestBody.put("model", language == Language.KO ? "chatgpt-4o-latest" : "gpt-4o-mini");
         requestBody.put("max_tokens", maxTokens);
         requestBody.put("response_format", Map.of("type", "json_object"));
         requestBody.put("temperature", 0.9);
@@ -383,26 +385,20 @@ public class StoryService {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
 
-        if(story.getLanguage() == Language.KO){
-            throw new StoryException(StoryErrorCode.KOREAN_TTS_NOT_AVAILABLE);  // 현재는 영어 TTS만 가능
-        }
-
         // 이미 해당 동화의 TTS가 저장되어 있다면 반환
         if (!story.getTtsUrl().isBlank()){
             return story.getTtsUrl();
         }
 
-        // TTS 생성 요청 전송
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "tts-1-hd");
-        requestBody.put("voice", "shimmer");
-        requestBody.put("input", story.getContent());
-        requestBody.put("speed", 0.95);
+        StoryDto.TTSCreationRequest ttsCreationRequest = StoryDto.TTSCreationRequest.builder()
+                .file_name(storyId)
+                .text(story.getContent())
+                .language(story.getLanguage() == Language.EN ? "EN" : "KR")
+                .build();
 
-        ResponseEntity<byte[]> response = openAIClient.sendTTSRequest(
-                "Bearer " + apiKey,
+        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest(
                 "application/json",
-                requestBody
+                ttsCreationRequest
         );
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
@@ -536,10 +532,6 @@ public class StoryService {
      * @return
      */
     public String getQuestionTTS(Long questionId, String question, Language language) {
-        if(language == Language.KO){
-            throw new StoryException(StoryErrorCode.KOREAN_TTS_NOT_AVAILABLE);  // 현재는 영어 TTS만 가능
-        }
-
         // TTS 생성 요청 전송
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "tts-1-hd");
