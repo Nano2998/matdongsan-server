@@ -75,21 +75,22 @@ public class StoryService {
      */
     @Transactional
     public StoryDto.StoryCreationResponse createStory(Long memberId, StoryDto.StoryCreationRequest requestDto) {
+        Language language = Language.fromString(requestDto.getLanguage());
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND)
         );
 
         // 프롬프트와 토큰 설정
-        String prompt = getPromptForAge(requestDto.getAge(), requestDto.getLanguage(), requestDto.getGiven());
-        int maxTokens = determineMaxTokens(requestDto.getLanguage(), requestDto.getAge());
+        String prompt = getPromptForAge(requestDto.getAge(), language, requestDto.getGiven());
+        int maxTokens = determineMaxTokens(language, requestDto.getAge());
 
         // 동화 생성 요청 및 응답 파싱
-        String responseContent = sendStoryCreationRequest(prompt, maxTokens, requestDto.getLanguage());
+        String responseContent = sendStoryCreationRequest(prompt, maxTokens, language);
         Map<String, String> storyDetails = parseStoryResponse(responseContent);
 
         Story save = storyRepository.save(Story.builder()
                 .age(requestDto.getAge())
-                .language(requestDto.getLanguage())
+                .language(language)
                 .given(requestDto.getGiven())
                 .title(storyDetails.get("title"))
                 .content(storyDetails.get("content"))

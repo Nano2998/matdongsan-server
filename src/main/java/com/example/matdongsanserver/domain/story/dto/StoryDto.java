@@ -4,9 +4,6 @@ import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -18,18 +15,9 @@ public class StoryDto {
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
     public static class StoryCreationRequest {
-        private Language language;
+        private String language;
         private int age;
         private String given;
-
-        @JsonCreator
-        public StoryCreationRequest(@JsonProperty("language") String language,
-                                    @JsonProperty("age") int age,
-                                    @JsonProperty("given") String given) {
-            this.language = Language.valueOf(language.toUpperCase());
-            this.age = age;
-            this.given = given;
-        }
     }
 
     @Builder

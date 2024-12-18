@@ -3,7 +3,6 @@ package com.example.matdongsanserver.domain.story.dto;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class ParentDto {
 

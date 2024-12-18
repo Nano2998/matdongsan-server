@@ -8,6 +8,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 public class SecurityUtils {
 
+    /**
+     * 현재 로그인한 멤버의 아이디를 반환
+     * @return memberId
+     */
     public static Long getLoggedInMemberId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof KakaoMemberDetails principal)) {
