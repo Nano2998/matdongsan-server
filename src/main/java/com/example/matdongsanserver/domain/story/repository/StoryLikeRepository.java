@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface StoryLikeRepository extends JpaRepository<StoryLike, Long> {
     Optional<StoryLike> findByStoryIdAndMemberId(String storyId, Long memberId);
     Page<StoryLike> findByMemberId(Long memberId, Pageable pageable);
+    boolean existsByStoryIdAndMemberId(String storyId, Long memberId);
 }
