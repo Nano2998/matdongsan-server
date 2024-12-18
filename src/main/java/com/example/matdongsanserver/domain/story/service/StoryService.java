@@ -533,16 +533,15 @@ public class StoryService {
      */
     public String getQuestionTTS(Long questionId, String question, Language language) {
         // TTS 생성 요청 전송
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "tts-1-hd");
-        requestBody.put("voice", "shimmer");
-        requestBody.put("input", question);
-        requestBody.put("speed", 0.95);
+        StoryDto.TTSCreationRequest ttsCreationRequest = StoryDto.TTSCreationRequest.builder()
+                .text(question)
+                .file_name(String.valueOf(questionId))
+                .language(language == Language.EN ? "EN" : "KR")
+                .build();
 
-        ResponseEntity<byte[]> response = openAIClient.sendTTSRequest(
-                "Bearer " + apiKey,
+        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest(
                 "application/json",
-                requestBody
+                ttsCreationRequest
         );
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
