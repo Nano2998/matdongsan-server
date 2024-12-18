@@ -28,20 +28,6 @@ public interface OpenAiClient {
     );
 
     /**
-     * TTS 생성용
-     * @param authorization
-     * @param contentType
-     * @param requestBody
-     * @return
-     */
-    @PostMapping(value = "/audio/speech", consumes = "application/json", produces = "application/json")
-    ResponseEntity<byte[]> sendTTSRequest(
-            @RequestHeader("Authorization") String authorization,
-            @RequestHeader("Content-Type") String contentType,
-            @RequestBody Map<String, Object> requestBody
-    );
-
-    /**
      * 이미지 생성용
      * @param authorization
      * @param contentType
