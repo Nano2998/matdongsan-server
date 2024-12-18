@@ -73,10 +73,9 @@ public class StoryService {
 
         // 프롬프트와 토큰 설정
         String prompt = getPromptForAge(requestDto.getAge(), language, requestDto.getGiven());
-        int maxTokens = determineMaxTokens(language, requestDto.getAge());
 
         // 동화 생성 요청 및 응답 파싱
-        String responseContent = sendStoryCreationRequest(prompt, maxTokens, language);
+        String responseContent = sendStoryCreationRequest(prompt, language);
         Map<String, String> storyDetails = parseStoryResponse(responseContent);
 
         Story save = storyRepository.save(Story.builder()
@@ -126,40 +125,16 @@ public class StoryService {
     }
 
     /**
-     * 언어별 나이별 최대 토큰 설정 (전체 동화 길이 결정)
-     *
-     * @param language
-     * @param age
-     * @return
-     */
-    private int determineMaxTokens(Language language, int age) {
-        return switch (language) {
-            case EN -> switch (age) {
-                case 3, 4 -> 300;
-                case 5, 6 -> 450;
-                case 7 -> 700;
-                case 8 -> 750;
-                default -> throw new StoryException(StoryErrorCode.INVALID_AGE);
-            };
-            case KO -> switch (age) {
-                case 3, 4, 5, 6, 7, 8 -> 1024;
-                default -> throw new StoryException(StoryErrorCode.INVALID_AGE);
-            };
-        };
-    }
-
-    /**
      * 동화 생성 요청을 전송
      *
      * @param prompt
-     * @param maxTokens
      * @param language
      * @return
      */
-    private String sendStoryCreationRequest(String prompt, int maxTokens, Language language) {
+    private String sendStoryCreationRequest(String prompt, Language language) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", language == Language.KO ? "chatgpt-4o-latest" : "gpt-4o-mini");
-        requestBody.put("max_tokens", maxTokens);
+        requestBody.put("max_tokens", 1024);
         requestBody.put("response_format", Map.of("type", "json_object"));
         requestBody.put("temperature", 0.9);
         requestBody.put("messages", new Object[]{
