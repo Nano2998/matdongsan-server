@@ -1,6 +1,6 @@
 package com.example.matdongsanserver.domain.story.controller;
 
-import com.example.matdongsanserver.domain.auth.util.SecurityUtils;
+import com.example.matdongsanserver.common.utils.SecurityUtils;
 import com.example.matdongsanserver.domain.story.dto.ParentDto;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.service.ParentService;

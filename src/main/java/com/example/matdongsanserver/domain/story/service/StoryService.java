@@ -1,9 +1,7 @@
 package com.example.matdongsanserver.domain.story.service;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.matdongsanserver.common.config.PromptsConfig;
+import com.example.matdongsanserver.common.utils.S3Utils;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
@@ -34,11 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -52,13 +46,10 @@ public class StoryService {
     @Value("${openai.api.key}")
     private String apiKey;
 
-    @Value("${cloud.aws.s3.bucket}")
-    private String bucketName;
-
+    private final S3Utils s3Utils;
     private final OpenAiClient openAIClient;
     private final TTSClient ttsClient;
     private final PromptsConfig promptsConfig;
-    private final AmazonS3 amazonS3;
     private final StoryRepository storyRepository;
     private final MemberRepository memberRepository;
     private final StoryLikeRepository storyLikeRepository;
@@ -350,37 +341,12 @@ public class StoryService {
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             // 생성된 TTS를 S3에 업로드
-            String ttsUrl = uploadTTSToS3("tts/", storyId, response.getBody());
+            String ttsUrl = s3Utils.uploadTTSToS3("tts/", storyId, response.getBody());
             storyRepository.save(story.updateTTSUrl(ttsUrl));
             return ttsUrl;
         } else {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }
-    }
-
-    /**
-     * TTS 파일을 S3에 업로드
-     *
-     * @param folderName
-     * @param storyId
-     * @param ttsData
-     * @return
-     */
-    private String uploadTTSToS3(String folderName, String storyId, byte[] ttsData) {
-        String fileName = folderName + storyId + ".mp3";
-
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentType("audio/mpeg");
-        metadata.setContentLength(ttsData.length);
-
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(ttsData)) {
-            amazonS3.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
-        } catch (IOException e) {
-            throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
-        }
-
-        log.info("MP3 File uploaded: {}", amazonS3.getUrl(bucketName, fileName).toString());
-        return amazonS3.getUrl(bucketName, fileName).toString();
     }
 
     /**
@@ -493,7 +459,7 @@ public class StoryService {
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             // 생성된 TTS를 S3에 업로드
-            return uploadTTSToS3("tts_question/", String.valueOf(questionId), response.getBody());
+            return s3Utils.uploadTTSToS3("tts_question/", String.valueOf(questionId), response.getBody());
         } else {
             throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
         }
@@ -533,7 +499,7 @@ public class StoryService {
      * @param scene
      * @return
      */
-    private String sendImageRequest(String scene, String storyId) {
+    private String sendImageRequest(String storyId, String scene) {
         String template = promptsConfig.getGenerateImage().replace("{scene}", scene);
 
         Map<String, Object> requestBody = new HashMap<>();
@@ -553,7 +519,7 @@ public class StoryService {
             throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
         }
         String imageUrl = parseImageResponse(response.getBody());
-        return uploadImageToS3("cover/", storyId, imageUrl);
+        return s3Utils.uploadImageFromUrl("cover/", storyId, imageUrl);
     }
 
     /**
@@ -573,40 +539,6 @@ public class StoryService {
                 throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
             }
         } catch (JsonProcessingException e) {
-            throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
-        }
-    }
-
-    /**
-     * 생성된 이미지 URL에서 이미지를 S3에 업로드
-     *
-     * @param folderName
-     * @param storyId
-     * @param imageUrl
-     * @return
-     */
-    private String uploadImageToS3(String folderName, String storyId, String imageUrl) {
-        String fileName = folderName + storyId + ".png";
-
-        try (InputStream inputStream = new URL(imageUrl).openStream()) {
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType("image/png");
-
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            byte[] chunk = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(chunk)) != -1) {
-                buffer.write(chunk, 0, bytesRead);
-            }
-            byte[] imageData = buffer.toByteArray();
-            metadata.setContentLength(imageData.length);
-
-            try (ByteArrayInputStream imageInputStream = new ByteArrayInputStream(imageData)) {
-                amazonS3.putObject(new PutObjectRequest(bucketName, fileName, imageInputStream, metadata));
-            }
-
-            return amazonS3.getUrl(bucketName, fileName).toString();
-        } catch (IOException e) {
             throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
         }
     }

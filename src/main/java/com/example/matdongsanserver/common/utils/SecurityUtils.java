@@ -1,4 +1,4 @@
-package com.example.matdongsanserver.domain.auth.util;
+package com.example.matdongsanserver.common.utils;
 
 import com.example.matdongsanserver.domain.auth.exception.AuthErrorCode;
 import com.example.matdongsanserver.domain.auth.exception.AuthException;

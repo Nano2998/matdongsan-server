@@ -1,7 +1,7 @@
 package com.example.matdongsanserver.domain.member.controller;
 
 
-import com.example.matdongsanserver.domain.auth.util.SecurityUtils;
+import com.example.matdongsanserver.common.utils.SecurityUtils;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
