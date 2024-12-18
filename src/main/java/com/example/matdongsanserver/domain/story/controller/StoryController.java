@@ -45,15 +45,6 @@ public class StoryController {
                 .body(storyService.getStoryDetail(storyId,SecurityUtils.getLoggedInMemberId()));
     }
 
-    @Operation(summary = "영어 동화 번역")
-    @GetMapping("/translation/{storyId}")
-    public ResponseEntity<StoryDto.StoryTranslationResponse> translateStory(
-            @PathVariable String storyId
-    ) {
-        return ResponseEntity.ok()
-                .body(storyService.translationStory(storyId));
-    }
-
     @Operation(summary = "동화 TTS")
     @GetMapping("/tts/{storyId}")
     public ResponseEntity<String> getStoryTTS(

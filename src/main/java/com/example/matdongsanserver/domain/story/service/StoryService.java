@@ -100,7 +100,7 @@ public class StoryService {
 
         // 동화 요약 및 커버 이미지 생성 요청
         String summary = sendSummaryRequest(storyDetails.get("content"));
-        save.updateCoverurl(sendImageRequest(save.getId(), summary));
+        save.updateCoverUrl(sendImageRequest(save.getId(), summary));
         storyRepository.save(save);
 
         // 생성된 동화를 최근 동화에 포함
@@ -228,62 +228,6 @@ public class StoryService {
         }
 
         return parsedStory;
-    }
-
-    /**
-     * 영어 동화 번역 - 번역이 이미 있다면 그대로 전달, 없다면 번역 요청 후 전달
-     *
-     * @param storyId
-     * @return
-     */
-    @Transactional
-    public StoryDto.StoryTranslationResponse translationStory(String storyId) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
-
-        if (story.getLanguage() == Language.KO) {
-            throw new StoryException(StoryErrorCode.INVALID_LANGUAGE_FOR_TRANSLATION);  // 한국어는 번역 불가
-        }
-
-        // 번역본이 저장되어 있지 않다면 번역 요청
-        if (story.getTranslationTitle().isBlank()) {
-            String responseContent = sendTranslationRequest(story.getTitle(), story.getContent());
-            Map<String, String> parsedStory = parseStoryResponse(responseContent);
-            story.updateTranslation(parsedStory.get("title"), parsedStory.get("content"));
-        }
-
-        Story updatedStory = storyRepository.save(story);
-        return StoryDto.StoryTranslationResponse.builder()
-                .story(updatedStory)
-                .build();
-    }
-
-    /**
-     * 영어 동화 번역 요청을 전송
-     *
-     * @param title
-     * @param content
-     * @return
-     */
-    private String sendTranslationRequest(String title, String content) {
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "gpt-4o-mini");
-        requestBody.put("response_format", Map.of("type", "json_object"));
-        requestBody.put("messages", new Object[]{
-                Map.of("role", "system", "content", promptsConfig.getTranslation()),
-                Map.of("role", "user", "content", "Title: " + title + ", Content: " + content)
-        });
-
-        ResponseEntity<String> response = openAIClient.sendChatRequest(
-                "Bearer " + apiKey,
-                "application/json",
-                requestBody
-        );
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
-        }
-        return parseChatGptResponse(response.getBody());
     }
 
     /**

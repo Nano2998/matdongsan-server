@@ -109,22 +109,6 @@ public class StoryDto {
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor(access = AccessLevel.PROTECTED)
-    public static class StoryTranslationResponse {
-        private String id;
-        private String translationTitle;
-        private String translationContent;
-
-        @Builder
-        public StoryTranslationResponse(Story story) {
-            this.id = story.getId();
-            this.translationTitle = story.getTranslationTitle();
-            this.translationContent = story.getTranslationContent();
-        }
-    }
-
-    @Getter
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
     public static class StoryQuestionResponse {
         private Long id;
         private String storyId;
