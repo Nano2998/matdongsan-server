@@ -78,7 +78,6 @@ public class AuthService {
             log.info("Successfully retrieved Kakao access token.");
             return parseJsonNode(response.getBody()).get("access_token").asText();
         } catch (FeignException e) {
-            log.error("Failed to retrieve Kakao access token: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
     }
@@ -123,10 +122,9 @@ public class AuthService {
         validateRefreshToken(refreshToken);
 
         RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> {
-                    log.warn("Refresh token has expired.");
-                    return new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
-                });
+                .orElseThrow(
+                        () ->  new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED)
+                );
 
         TokenResponse tokenResponse = tokenProvider.createToken(
                 findToken.getId(), findToken.getEmail(), findToken.getAuthority());
@@ -158,7 +156,6 @@ public class AuthService {
                     .profileImage(parseJsonNode(response.getBody()).get("kakao_account").get("profile").get("profile_image_url").asText())
                     .build();
         } catch (FeignException e) {
-            log.error("Failed to retrieve Kakao user email: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
     }
@@ -169,11 +166,9 @@ public class AuthService {
      */
     private void validateRefreshToken(String refreshToken) {
         if (!StringUtils.hasText(refreshToken) || !tokenProvider.validateToken(refreshToken)) {
-            log.warn("Invalid or empty refresh token.");
             throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
         if (!tokenProvider.validateTokenExpired(refreshToken)) {
-            log.warn("Refresh token has expired.");
             throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
     }
@@ -187,7 +182,6 @@ public class AuthService {
     private String getTokenFromHeader(final HttpServletRequest request, final String headerName) {
         String token = request.getHeader(headerName);
         if (!StringUtils.hasText(token)) {
-            log.warn("No token found in header: {}", headerName);
             throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
         return token;
@@ -200,7 +194,6 @@ public class AuthService {
      */
     private void validateLoginRequest(String actualEmail, String expectedEmail) {
         if (!Objects.equals(actualEmail, expectedEmail)) {
-            log.warn("Email mismatch during login request. expected={}, actual={}", expectedEmail, actualEmail);
             throw new AuthException(AuthErrorCode.INVALID_LOGIN_REQUEST);
         }
     }
@@ -266,6 +259,5 @@ public class AuthService {
         } catch (JsonProcessingException e) {
             throw new AuthException(AuthErrorCode.JSON_PARSING_ERROR);
         }
-
     }
 }
