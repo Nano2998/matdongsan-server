@@ -1,7 +1,7 @@
 package com.example.matdongsanserver.domain.dashboard.service;
 
-import com.example.matdongsanserver.domain.child.dto.ChildDto;
-import com.example.matdongsanserver.domain.child.service.ChildService;
+import com.example.matdongsanserver.domain.child.entity.Child;
+import com.example.matdongsanserver.domain.child.repository.ChildRepository;
 import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
@@ -33,7 +33,7 @@ public class DashboardService {
     private final StoryQuestionRepository storyQuestionRepository;
     private final MemberRepository memberRepository;
     private final QuestionAnswerRepository questionAnswerRepository;
-    private final ChildService childService;
+    private final ChildRepository childRepository;
     private final StoryRepository storyRepository;
     private final ExternalApiRequest externalApiRequest;
 
@@ -56,9 +56,7 @@ public class DashboardService {
 
         // 동화 질문 생성 요청 및 파싱
         List<Map<String, String>> parsedQuestions = externalApiRequest.sendQuestionRequest(
-                story.getLanguage(),
-                story.getAge(),
-                story.getContent()
+                story.getLanguage(), story.getAge(), story.getContent()
         );
 
         // QuestionAnswer 엔티티 생성 및 저장
@@ -87,30 +85,15 @@ public class DashboardService {
             throw new MemberException(MemberErrorCode.MEMBER_NOT_FOUND);
         }
 
-        List<ChildDto.ChildDetail> childDetails = childService.getChildDetails(memberId);
-
-        List<Long> childIds = childDetails.stream()
-                .map(ChildDto.ChildDetail::getId)
+        //자녀 아이디 조회
+        List<Long> childIds = childRepository.findByMemberId(memberId)
+                .stream()
+                .map(Child::getId)
                 .toList();
 
+        //자녀 아이디를 통해 storyQuestion 조회
         Page<StoryQuestion> childQuestions = storyQuestionRepository.findAllByChildIdIn(childIds, pageable);
-
-        List<String> storyIds = childQuestions.getContent().stream()
-                .map(StoryQuestion::getStoryId)
-                .distinct()
-                .toList();
-
-        List<Story> stories = storyRepository.findByIdIn(storyIds);
-
-        Map<String, String> storyTitleMap = stories.stream()
-                .collect(Collectors.toMap(Story::getId, Story::getTitle));
-
-        return childQuestions.map(question -> DashboardDto.ParentQnaLogRequest.builder()
-                .id(question.getId())
-                .createAt(question.getCreatedAt())
-                .title(storyTitleMap.get(question.getStoryId()))
-                .child(question.getChild().getName())
-                .build());
+        return mapQuestionsToDto(childQuestions);
     }
 
     /**
@@ -121,15 +104,21 @@ public class DashboardService {
      */
     public Page<DashboardDto.ParentQnaLogRequest> getChildQnaLog(Long childId, Pageable pageable) {
         Page<StoryQuestion> childQuestions = storyQuestionRepository.findByChildId(childId, pageable);
+        return mapQuestionsToDto(childQuestions);
+    }
 
+    /**
+     * StoryQuestion 목록을 DTO로 매핑
+     * @param childQuestions
+     * @return
+     */
+    private Page<DashboardDto.ParentQnaLogRequest> mapQuestionsToDto(Page<StoryQuestion> childQuestions) {
         List<String> storyIds = childQuestions.getContent().stream()
                 .map(StoryQuestion::getStoryId)
                 .distinct()
                 .toList();
 
-        List<Story> stories = storyRepository.findByIdIn(storyIds);
-
-        Map<String, String> storyTitleMap = stories.stream()
+        Map<String, String> storyTitleMap = storyRepository.findByIdIn(storyIds).stream()
                 .collect(Collectors.toMap(Story::getId, Story::getTitle));
 
         return childQuestions.map(question -> DashboardDto.ParentQnaLogRequest.builder()
@@ -146,7 +135,6 @@ public class DashboardService {
      * @return
      */
     public List<DashboardDto.QnAs> getQnaDetail(Long qnaId) {
-
         StoryQuestion storyQuestion = storyQuestionRepository.findByIdOrThrow(qnaId);
 
         return storyQuestion.getQuestionAnswers().stream()

@@ -25,6 +25,9 @@ public class ChildService {
 
     /**
      * 자녀 추가 -> 전체 자녀를 반환
+     * @param memberId
+     * @param childRequest
+     * @return
      */
     @Transactional
     public List<ChildDto.ChildDetail> registerChild(Long memberId, ChildDto.ChildRequest childRequest) {
@@ -48,6 +51,7 @@ public class ChildService {
 
     /**
      * 자녀의 나이 검사
+     * @param childRequest
      */
     private static void validateChildAge(ChildDto.ChildRequest childRequest) {
         if (childRequest.getEnglishAge() < 3 || childRequest.getEnglishAge() > 8 ||
@@ -58,6 +62,8 @@ public class ChildService {
 
     /**
      * 자녀 조회
+     * @param memberId
+     * @return
      */
     public List<ChildDto.ChildDetail> getChildDetails(Long memberId) {
         return childRepository.findByMemberId(memberId)
@@ -68,6 +74,10 @@ public class ChildService {
 
     /**
      * 자녀 정보 수정
+     * @param memberId
+     * @param childId
+     * @param childRequest
+     * @return
      */
     @Transactional
     public List<ChildDto.ChildDetail> updateChild(Long memberId, Long childId, ChildDto.ChildRequest childRequest) {
@@ -90,6 +100,8 @@ public class ChildService {
 
     /**
      * 자녀 삭제
+     * @param memberId
+     * @param childId
      */
     @Transactional
     public void deleteChild(Long memberId, Long childId) {

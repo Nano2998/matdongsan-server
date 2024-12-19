@@ -2,7 +2,6 @@ package com.example.matdongsanserver.domain.dashboard.controller;
 
 import com.example.matdongsanserver.common.utils.SecurityUtils;
 import com.example.matdongsanserver.domain.dashboard.dto.DashboardDto;
-import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.dashboard.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
