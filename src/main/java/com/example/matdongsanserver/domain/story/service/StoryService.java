@@ -130,7 +130,7 @@ public class StoryService {
     private String sendStoryCreationRequest(String prompt, Language language) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", language == Language.KO ? "chatgpt-4o-latest" : "gpt-4o-mini");
-        requestBody.put("max_tokens", 1024);
+        requestBody.put("max_tokens", 2048);
         requestBody.put("response_format", Map.of("type", "json_object"));
         requestBody.put("temperature", 0.9);
         requestBody.put("messages", new Object[]{
