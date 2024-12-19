@@ -21,30 +21,17 @@ public class ResponseParser {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * JSON 문자열에서 특정 경로의 값을 추출하는 공통 메서드
-     * @param json JSON 문자열
-     * @param pathExtractor 경로 추출 로직
-     * @param <T> 반환 타입
-     * @return 추출된 값
-     */
-    private <T> T parseJson(String json, JsonNodeExtractor<T> pathExtractor) {
-        try {
-            JsonNode rootNode = objectMapper.readTree(json);
-            return pathExtractor.extract(rootNode);
-        } catch (IOException e) {
-            throw new BusinessException(CommonErrorCode.JSON_PARSING_ERROR);
-        }
-    }
-
-    /**
      * GPT의 응답에서 content 값 추출
      * @param responseBody GPT 응답 JSON 문자열
      * @return content 값
      */
     public String extractChatGptContent(String responseBody) {
-        return parseJson(responseBody, rootNode ->
-                rootNode.path("choices").get(0).path("message").path("content").asText()
-        );
+        try {
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            return rootNode.path("choices").get(0).path("message").path("content").asText();
+        } catch (IOException e) {
+            throw new BusinessException(CommonErrorCode.JSON_PARSING_ERROR);
+        }
     }
 
     /**
@@ -53,10 +40,14 @@ public class ResponseParser {
      * @return 제목과 내용이 포함된 Map
      */
     public Map<String, String> extractStoryDetails(String response) {
-        return parseJson(response, rootNode -> Map.of(
-                "title", rootNode.path("title").asText().trim(),
-                "content", rootNode.path("content").asText().trim()
-        ));
+        try {
+            JsonNode rootNode = objectMapper.readTree(response);
+            String title = rootNode.path("title").asText().trim();
+            String content = rootNode.path("content").asText().trim();
+            return Map.of("title", title, "content", content);
+        } catch (IOException e) {
+            throw new BusinessException(CommonErrorCode.JSON_PARSING_ERROR);
+        }
     }
 
     /**
@@ -65,14 +56,17 @@ public class ResponseParser {
      * @return 이미지 URL
      */
     public String extractImageUrl(String responseBody) {
-        return parseJson(responseBody, rootNode -> {
+        try {
+            JsonNode rootNode = objectMapper.readTree(responseBody);
             JsonNode dataNode = rootNode.path("data");
             if (dataNode.isArray() && !dataNode.isEmpty()) {
                 return dataNode.get(0).path("url").asText();
             } else {
                 throw new BusinessException(CommonErrorCode.JSON_PARSING_ERROR);
             }
-        });
+        } catch (IOException e) {
+            throw new BusinessException(CommonErrorCode.JSON_PARSING_ERROR);
+        }
     }
 
     /**
@@ -81,7 +75,12 @@ public class ResponseParser {
      * @return 텍스트
      */
     public String extractSttText(String response) {
-        return parseJson(response, rootNode -> rootNode.path("text").asText().trim());
+        try {
+            JsonNode rootNode = objectMapper.readTree(response);
+            return rootNode.path("text").asText().trim();
+        } catch (IOException e) {
+            throw new BusinessException(CommonErrorCode.JSON_PARSING_ERROR);
+        }
     }
 
     /**
@@ -95,14 +94,5 @@ public class ResponseParser {
         } catch (IOException e) {
             throw new BusinessException(CommonErrorCode.JSON_PARSING_ERROR);
         }
-    }
-
-    /**
-     * JSON 경로 추출을 위한 Functional Interface
-     * @param <T> 반환 타입
-     */
-    @FunctionalInterface
-    private interface JsonNodeExtractor<T> {
-        T extract(JsonNode rootNode);
     }
 }
