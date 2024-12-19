@@ -32,10 +32,9 @@ public class LibraryController {
             @RequestParam(defaultValue = "main") String age,
             Pageable pageable
     ) {
-        SortType sortType = SortType.fromString(sort);
-        LangType langType = LangType.fromString(language);
-        AgeType ageType = AgeType.fromString(age);
-        return ResponseEntity.ok(libraryService.getStories(ageType,langType, sortType, pageable));
+        return ResponseEntity.ok(libraryService.getStories(
+                AgeType.fromString(age),LangType.fromString(language), SortType.fromString(sort), pageable
+        ));
     }
 
     @Operation(summary = "특정 작가의 동화 리스트 조회")
@@ -45,8 +44,9 @@ public class LibraryController {
             @PathVariable Long authorId,
             Pageable pageable
     ) {
-        SortType sortType = SortType.fromString(sort);
-        return ResponseEntity.ok(libraryService.getStoriesByAuthorId(authorId, sortType, pageable));
+        return ResponseEntity.ok(libraryService.getStoriesByAuthorId(
+                authorId, SortType.fromString(sort), pageable
+        ));
     }
 
     @Operation(summary = "내 동화 리스트 조회")
@@ -55,8 +55,9 @@ public class LibraryController {
             @RequestParam(defaultValue = "recent") String sort,
             Pageable pageable
     ) {
-        SortType sortType = SortType.fromString(sort);
-        return ResponseEntity.ok(libraryService.getMyStories(SecurityUtils.getLoggedInMemberId(), sortType, pageable));
+        return ResponseEntity.ok(libraryService.getMyStories(
+                SecurityUtils.getLoggedInMemberId(), SortType.fromString(sort), pageable
+        ));
     }
 
     @Operation(summary = "좋아요 누른 동화 리스트 조회")

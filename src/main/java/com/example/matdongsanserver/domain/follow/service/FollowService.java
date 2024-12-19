@@ -25,6 +25,8 @@ public class FollowService {
 
     /**
      * 팔로우
+     * @param memberId
+     * @param followerId
      */
     @Transactional
     public void follow(Long memberId, Long followerId) {
@@ -39,6 +41,8 @@ public class FollowService {
 
     /**
      * 팔로우 취소
+     * @param memberId
+     * @param followerId
      */
     @Transactional
     public void unfollow(Long memberId, Long followerId) {
@@ -53,6 +57,8 @@ public class FollowService {
 
     /**
      * 팔로우 리스트 조회
+     * @param memberId
+     * @return
      */
     public List<MemberDto.MemberSummary> getFollowers(Long memberId) {
         List<MemberDto.MemberSummary> followers = new ArrayList<>();

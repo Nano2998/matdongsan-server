@@ -29,8 +29,8 @@ public class LibraryService {
     private final StoryRepository storyRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
-    private static final int MAX_RECENT_TALES = 50; // 최대 리스트 길이
-    private static final int TTL_DAYS = 5; // TTL 설정
+    private static final int MAX_RECENT_TALES = 50;
+    private static final int TTL_DAYS = 5;
 
     /**
      * 조건별 동화 리스트 조회
@@ -113,17 +113,11 @@ public class LibraryService {
      */
     public void addRecentStories(Long memberId, String storyId) {
         String redisKey = "user:" + memberId + ":recentTales";
-        // 중복 제거
-        redisTemplate.opsForList().remove(redisKey, 0, storyId);
 
-        // 리스트에 추가
-        redisTemplate.opsForList().leftPush(redisKey, storyId);
-
-        // 리스트 길이 제한
-        redisTemplate.opsForList().trim(redisKey, 0, MAX_RECENT_TALES - 1);
-
-        // TTL 설정
-        redisTemplate.expire(redisKey, TTL_DAYS, TimeUnit.DAYS);
+        redisTemplate.opsForList().remove(redisKey, 0, storyId);  // 중복 제거
+        redisTemplate.opsForList().leftPush(redisKey, storyId);  // 리스트에 추가
+        redisTemplate.opsForList().trim(redisKey, 0, MAX_RECENT_TALES - 1);  // 리스트 길이 제한
+        redisTemplate.expire(redisKey, TTL_DAYS, TimeUnit.DAYS);  // TTL 설정
     }
 
 

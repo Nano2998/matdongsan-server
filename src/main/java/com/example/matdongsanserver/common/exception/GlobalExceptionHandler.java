@@ -11,18 +11,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
-        log.error("BusinessException occurred: {}, ErrorCode: {}", e.getErrorCode().getMessage(), e.getErrorCode(), e);
+        log.warn("[맛동산]: 예외 발생, 예외내용 = {}, 예외 코드 = {}", e.getErrorCode().getMessage(), e.getErrorCode());
         return ErrorResponse.toResponseEntity(e.getErrorCode());
     }
 
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ErrorResponse> handleGenericException(Exception e) {
-        log.error("Unexpected Exception occurred: {}", e.getMessage(), e);
+        log.error("[맛동산]: 예상치 못한 예외 발생, 예외내용 = {}", e.getMessage());
         return ResponseEntity.status(500)
                 .body(ErrorResponse.builder()
                         .status(500)
                         .code("SERVER_ERROR")
-                        .message("Unexpected error occurred.")
+                        .message(e.getMessage())
                         .build());
     }
 }

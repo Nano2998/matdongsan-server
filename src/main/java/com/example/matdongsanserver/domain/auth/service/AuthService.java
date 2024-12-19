@@ -60,10 +60,8 @@ public class AuthService {
      * 인증 서버로부터 인증 코드를 통해 access 토큰을 받아오는 로직
      * @param code
      * @return
-     * @throws JsonProcessingException
      */
-    public String getToken(final String code) throws JsonProcessingException {
-        log.info("Attempting to retrieve Kakao access token for code: {}", code);
+    public String getToken(final String code) {
 
         Map<String, String> requestParams = new HashMap<>();
         requestParams.put("grant_type", "authorization_code");
@@ -75,7 +73,6 @@ public class AuthService {
         try {
             ResponseEntity<String> response = kakaoAuthClient.getAccessToken(requestParams);
 
-            log.info("Successfully retrieved Kakao access token.");
             return parseJsonNode(response.getBody()).get("access_token").asText();
         } catch (FeignException e) {
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
@@ -89,18 +86,15 @@ public class AuthService {
      */
     @Transactional
     public LoginResponse kakaoLogin(LoginRequest loginRequest) {
-        log.info("Processing Kakao login for token.");
         KakaoInfo kakaoInfo = getKakaoUserEmail(loginRequest.getToken());
         validateLoginRequest(kakaoInfo.getEmail(), loginRequest.getEmail());
 
         Member member = getOrRegisterMember(kakaoInfo);
-        log.info("Member retrieved or created. memberId={}, email={}", member.getId(), member.getEmail());
 
         TokenResponse tokenResponse = tokenProvider.createToken(
                 member.getId(), member.getEmail(), member.getRole().name());
 
         saveRefreshToken(member, tokenResponse.getRefreshToken());
-        log.info("Token created for memberId: {}", member.getId());
 
         return LoginResponse.builder()
                 .accessToken(tokenResponse.getAccessToken())
@@ -116,7 +110,6 @@ public class AuthService {
      */
     @Transactional
     public TokenResponse reissueAccessToken(final HttpServletRequest request) {
-        log.info("Reissuing access and refresh tokens.");
         String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
 
         validateRefreshToken(refreshToken);
@@ -128,7 +121,6 @@ public class AuthService {
 
         TokenResponse tokenResponse = tokenProvider.createToken(
                 findToken.getId(), findToken.getEmail(), findToken.getAuthority());
-        log.info("New tokens created for memberId: {}", findToken.getId());
 
         updateRefreshToken(findToken, tokenResponse.getRefreshToken());
 
@@ -147,8 +139,6 @@ public class AuthService {
         log.info("Retrieving Kakao user email.");
         try {
             ResponseEntity<String> response = kakaoUserInfoClient.getUserInfo("Bearer " + token);
-
-            log.info("Successfully retrieved Kakao user email.");
 
             return KakaoInfo.builder()
                     .email(parseJsonNode(response.getBody()).get("kakao_account").get("email").asText())

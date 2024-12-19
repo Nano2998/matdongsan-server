@@ -43,27 +43,44 @@ public class ModuleService {
     private final QuestionAnswerRepository questionAnswerRepository;
     private final ExternalApiRequest externalApiRequest;
 
+    /**
+     * 초기 연결 설정
+     * @throws MqttException
+     */
     @PostConstruct
     public void init() throws MqttException {
         this.client = new MqttClient(brokerAddress, MqttClient.generateClientId());
         this.client.connect();
-        log.info("Init MQTT broker");
+        log.info("MQTT broker 연결 성공");
     }
 
+    /**
+     * 연결 종료
+     * @throws MqttException
+     */
     @PreDestroy
     public void disconnect() throws MqttException {
         if (client != null && client.isConnected()) {
             client.disconnect();
-            log.info("Disconnected from MQTT broker");
+            log.info("MQTT broker 연결 종료");
         }
     }
 
+    /**
+     * 동화 TTS를 모듈로 전송
+     * @param storyId
+     */
     @Transactional
     public void sendStory(String storyId) {
         String storyTTS = storyService.getOrRegisterStoryTTS(storyId);
         sendMqttMessage("only-play", storyTTS);
     }
 
+    /**
+     * 동화 질문 TTS를 모듈로 전송
+     * @param storyQuestionId
+     * @param childId
+     */
     @Transactional
     public void sendQuestion(Long storyQuestionId, Long childId) {
         StoryQuestion storyQuestion = storyQuestionRepository.findByIdOrThrow(storyQuestionId);
@@ -76,6 +93,11 @@ public class ModuleService {
         );
     }
 
+    /**
+     * 모듈로 요청을 전송
+     * @param action
+     * @param content
+     */
     private void sendMqttMessage(String action, String content) {
         String command = action + " " + content;
         MqttMessage message = new MqttMessage(command.getBytes());
@@ -83,19 +105,21 @@ public class ModuleService {
 
         try {
             client.publish(topic, message);
-            log.info("Sent command: {}", command);
         } catch (MqttException e) {
-            log.error("Failed to send command: {}", command, e);
             throw new ModuleException(ModuleErrorCode.FAILED_TO_CONNECT_MODULE);
         }
     }
 
+    /**
+     * 모듈로부터 아이의 음성을 전달받아서 STT로 텍스트로 변환 후 저장
+     * @param file
+     * @return
+     */
     @Transactional
     public String uploadAnswer(MultipartFile file) {
         if (file.isEmpty()) {
             throw new ModuleException(ModuleErrorCode.INVALID_FILE);
         }
-        log.info("File name: {}", file.getOriginalFilename());
 
         Long questionId = Long.parseLong(Objects.requireNonNull(file.getOriginalFilename()).replace("-recorded.mp3", ""));
         QuestionAnswer questionAnswer = questionAnswerRepository.findById(questionId).orElseThrow(
