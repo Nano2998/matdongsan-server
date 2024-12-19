@@ -1,6 +1,5 @@
-package com.example.matdongsanserver.domain.story.service;
+package com.example.matdongsanserver.domain.library.service;
 
-import com.example.matdongsanserver.domain.library.service.LibraryService;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -12,6 +11,7 @@ import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
+import com.example.matdongsanserver.domain.story.service.StoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
