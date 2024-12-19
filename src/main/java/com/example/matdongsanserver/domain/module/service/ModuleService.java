@@ -1,12 +1,15 @@
 package com.example.matdongsanserver.domain.module.service;
 
 import com.example.matdongsanserver.domain.child.repository.ChildRepository;
+import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
+import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRepository;
 import com.example.matdongsanserver.domain.module.exception.ModuleErrorCode;
 import com.example.matdongsanserver.domain.module.exception.ModuleException;
 import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
 import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
+import com.example.matdongsanserver.domain.story.service.ExternalApiService;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -20,6 +23,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -37,6 +42,8 @@ public class ModuleService {
     private final StoryService storyService;
     private final StoryQuestionRepository storyQuestionRepository;
     private final ChildRepository childRepository;
+    private final QuestionAnswerRepository questionAnswerRepository;
+    private final ExternalApiService externalApiService;
 
     @PostConstruct
     public void init() throws MqttException {
@@ -55,7 +62,7 @@ public class ModuleService {
 
     @Transactional
     public void sendStory(String storyId) {
-        String storyTTS = storyService.findOrCreateStoryTTS(storyId);
+        String storyTTS = storyService.getOrRegisterStoryTTS(storyId);
         sendMqttMessage("only-play", storyTTS);
     }
 
@@ -67,7 +74,7 @@ public class ModuleService {
         storyQuestion.updateChild(childRepository.findByIdOrThrow(childId));
 
         storyQuestion.getQuestionAnswers().forEach(
-                qna -> sendMqttMessage("play-and-record", storyService.getQuestionTTS(qna.getId(), qna.getQuestion(), storyQuestion.getLanguage()))
+                qna -> sendMqttMessage("play-and-record", externalApiService.getQuestionTTS(qna.getId(), qna.getQuestion(), storyQuestion.getLanguage()))
         );
     }
 
@@ -91,6 +98,12 @@ public class ModuleService {
             throw new ModuleException(ModuleErrorCode.INVALID_FILE);
         }
         log.info("File name: {}", file.getOriginalFilename());
-        return storyService.sendSTTRequest(file);
+
+        Long questionId = Long.parseLong(Objects.requireNonNull(file.getOriginalFilename()).replace("-recorded.mp3", ""));
+        QuestionAnswer questionAnswer = questionAnswerRepository.findById(questionId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.INVALID_FILE_NAME)
+        );
+
+        return questionAnswer.updateAnswer(externalApiService.sendSTTRequest(file));
     }
 }

@@ -179,7 +179,7 @@ class DashboardServiceTest {
         StoryQuestion question = createQuestionWithAnswer(child, storyId, "질문 내용", "샘플 답변", "테스트코드 답변");
         StoryQuestion save = storyQuestionRepository.save(question);
         // When
-        List<StoryDto.QnAs> qnaDetail = parentService.getQnaDetail(save.getId());
+        List<DashboardDto.QnAs> qnaDetail = parentService.getQnaDetail(save.getId());
 
         // Then
         assertThat(qnaDetail.get(0).getQuestion()).isEqualTo("질문 내용");

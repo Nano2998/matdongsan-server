@@ -84,7 +84,7 @@ class LibraryServiceTest {
         // 좋아요 추가
         Page<StoryDto.StorySummary> stories = libraryService.getStories(AgeType.LV1, LangType.EN, SortType.RECENT, Pageable.unpaged());
         String storyId = stories.getContent().get(0).getId();
-        storyService.addLike(storyId,member.getId());
+        storyService.likeStory(storyId,member.getId());
 
         // When
         Page<StoryDto.StorySummary> popularStories = libraryService.getStories(AgeType.LV1, LangType.EN, SortType.POPULAR, Pageable.unpaged());
@@ -145,8 +145,8 @@ class LibraryServiceTest {
         Page<StoryDto.StorySummary> stories = libraryService.getStories(AgeType.LV1, LangType.EN, SortType.RECENT, Pageable.unpaged());
         String storyId = stories.getContent().get(0).getId();
         String storyId2 = stories.getContent().get(1).getId();
-        storyService.addLike(storyId,member.getId());
-        storyService.addLike(storyId2,member.getId());
+        storyService.likeStory(storyId,member.getId());
+        storyService.likeStory(storyId2,member.getId());
 
         // When
         Page<StoryDto.StorySummary> likedStories = libraryService.getLikedStories(member.getId(), Pageable.unpaged());

@@ -22,6 +22,15 @@ public class DashboardController {
 
     private final DashboardService parentService;
 
+    @Operation(summary = "동화 질문 생성")
+    @GetMapping("/questions/{storyId}")
+    public ResponseEntity<DashboardDto.StoryQuestionResponse> registerQuestions(
+            @PathVariable String storyId
+    ) {
+        return ResponseEntity.ok()
+                .body(parentService.registerQuestions(storyId));
+    }
+
     @Operation(summary = "대시보드 QnA 모두보기")
     @GetMapping
     public ResponseEntity<Page<DashboardDto.ParentQnaLogRequest>> getAllQna(
@@ -41,7 +50,7 @@ public class DashboardController {
 
     @Operation(summary = "QnA 상세보기")
     @GetMapping("/detail/{qnaId}")
-    public ResponseEntity<List<StoryDto.QnAs>> getQnaDetail(
+    public ResponseEntity<List<DashboardDto.QnAs>> getQnaDetail(
             @PathVariable Long qnaId
     ) {
         return ResponseEntity.ok().body(parentService.getQnaDetail(qnaId));

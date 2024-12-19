@@ -2,22 +2,17 @@ package com.example.matdongsanserver.domain.dashboard.service;
 
 import com.example.matdongsanserver.domain.child.dto.ChildDto;
 import com.example.matdongsanserver.domain.child.service.ChildService;
-import com.example.matdongsanserver.domain.dashboard.exception.DashboardErrorCode;
-import com.example.matdongsanserver.domain.dashboard.exception.DashboardException;
+import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import com.example.matdongsanserver.domain.member.service.MemberService;
 import com.example.matdongsanserver.domain.dashboard.dto.DashboardDto;
-import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRepository;
-import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
-import com.example.matdongsanserver.domain.library.service.LibraryService;
-import com.example.matdongsanserver.domain.story.service.StoryService;
+import com.example.matdongsanserver.domain.story.service.ExternalApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,13 +32,50 @@ public class DashboardService {
 
     private final StoryQuestionRepository storyQuestionRepository;
     private final MemberRepository memberRepository;
-    private final StoryLikeRepository storyLikeRepository;
     private final QuestionAnswerRepository questionAnswerRepository;
-    private final LibraryService libraryService;
-    private final MemberService memberService;
     private final ChildService childService;
     private final StoryRepository storyRepository;
-    private final StoryService storyService;
+    private final ExternalApiService externalApiService;
+
+    /**
+     * 동화 질문 생성
+     * @param storyId
+     * @return
+     */
+    @Transactional
+    public DashboardDto.StoryQuestionResponse registerQuestions(String storyId) {
+        Story story = storyRepository.findByIdOrThrow(storyId);
+
+        // StoryQuestion 엔티티 생성 및 저장
+        StoryQuestion storyQuestion = storyQuestionRepository.save(
+                StoryQuestion.builder()
+                        .storyId(storyId)
+                        .language(story.getLanguage())
+                        .build()
+        );
+
+        // 동화 질문 생성 요청 및 파싱
+        List<Map<String, String>> parsedQuestions = externalApiService.sendQuestionRequest(
+                story.getLanguage(),
+                story.getAge(),
+                story.getContent()
+        );
+
+        // QuestionAnswer 엔티티 생성 및 저장
+        List<QuestionAnswer> questionAnswers = parsedQuestions.stream()
+                .map(question -> QuestionAnswer.builder()
+                        .question(question.get("Q").trim())
+                        .sampleAnswer(question.get("A").trim())
+                        .storyQuestion(storyQuestion)
+                        .build())
+                .toList();
+
+        questionAnswerRepository.saveAll(questionAnswers);
+
+        return DashboardDto.StoryQuestionResponse.builder()
+                .storyquestion(storyQuestion)
+                .build();
+    }
 
     /**
      * 부모 qna로그 전체 가져오기
@@ -113,12 +145,12 @@ public class DashboardService {
      * @param qnaId
      * @return
      */
-    public List<StoryDto.QnAs> getQnaDetail(Long qnaId) {
+    public List<DashboardDto.QnAs> getQnaDetail(Long qnaId) {
 
         StoryQuestion storyQuestion = storyQuestionRepository.findByIdOrThrow(qnaId);
 
         return storyQuestion.getQuestionAnswers().stream()
-                .map(StoryDto.QnAs::new)
+                .map(DashboardDto.QnAs::new)
                 .toList();
     }
 }

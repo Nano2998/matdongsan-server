@@ -93,7 +93,7 @@ public class AuthService {
         KakaoInfo kakaoInfo = getKakaoUserEmail(loginRequest.getToken());
         validateLoginRequest(kakaoInfo.getEmail(), loginRequest.getEmail());
 
-        Member member = findOrCreateMember(kakaoInfo);
+        Member member = getOrRegisterMember(kakaoInfo);
         log.info("Member retrieved or created. memberId={}, email={}", member.getId(), member.getEmail());
 
         TokenResponse tokenResponse = tokenProvider.createToken(
@@ -203,7 +203,7 @@ public class AuthService {
      * @param kakaoInfo
      * @return
      */
-    private Member findOrCreateMember(KakaoInfo kakaoInfo) {
+    private Member getOrRegisterMember(KakaoInfo kakaoInfo) {
         return memberRepository.findByEmail(kakaoInfo.getEmail())
                 .orElseGet(() -> memberRepository.save(
                         Member.builder()

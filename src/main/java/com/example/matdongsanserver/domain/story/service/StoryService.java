@@ -1,12 +1,9 @@
 package com.example.matdongsanserver.domain.story.service;
 
 import com.example.matdongsanserver.common.config.PromptsConfig;
-import com.example.matdongsanserver.common.utils.S3Utils;
 import com.example.matdongsanserver.domain.library.service.LibraryService;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import com.example.matdongsanserver.domain.story.client.OpenAiClient;
-import com.example.matdongsanserver.domain.story.client.TTSClient;
 import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
 import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
@@ -19,22 +16,11 @@ import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRe
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -42,29 +28,21 @@ import java.util.Objects;
 @Transactional(readOnly = true)
 public class StoryService {
 
-    @Value("${openai.api.key}")
-    private String apiKey;
-
-    private final S3Utils s3Utils;
-    private final OpenAiClient openAIClient;
-    private final TTSClient ttsClient;
     private final PromptsConfig promptsConfig;
     private final StoryRepository storyRepository;
     private final MemberRepository memberRepository;
     private final StoryLikeRepository storyLikeRepository;
-    private final StoryQuestionRepository storyQuestionRepository;
-    private final QuestionAnswerRepository questionAnswerRepository;
     private final LibraryService libraryService;
+    private final ExternalApiService externalApiService;
 
     /**
      * 동화 생성
-     *
      * @param memberId
      * @param requestDto
      * @return
      */
     @Transactional
-    public StoryDto.StoryCreationResponse createStory(Long memberId, StoryDto.StoryCreationRequest requestDto) {
+    public StoryDto.StoryCreationResponse registerStory(Long memberId, StoryDto.StoryCreationRequest requestDto) {
         Language language = Language.fromString(requestDto.getLanguage());
         Member member = memberRepository.findByIdOrThrow(memberId);
 
@@ -72,8 +50,7 @@ public class StoryService {
         String prompt = getPromptForAge(requestDto.getAge(), language, requestDto.getGiven());
 
         // 동화 생성 요청 및 응답 파싱
-        String responseContent = sendStoryCreationRequest(prompt, language);
-        Map<String, String> storyDetails = parseStoryResponse(responseContent);
+        Map<String, String> storyDetails = externalApiService.sendStoryCreationRequest(prompt, language);
 
         Story save = storyRepository.save(Story.builder()
                 .age(requestDto.getAge())
@@ -87,8 +64,8 @@ public class StoryService {
                 .build());
 
         // 동화 요약 및 커버 이미지 생성 요청
-        String summary = sendSummaryRequest(storyDetails.get("content"));
-        save.updateCoverUrl(sendImageRequest(save.getId(), summary));
+        String summary = externalApiService.sendSummaryRequest(storyDetails.get("content"));
+        save.updateCoverUrl(externalApiService.sendImageRequest(save.getId(), summary));
         storyRepository.save(save);
 
         // 생성된 동화를 최근 동화에 포함
@@ -101,7 +78,6 @@ public class StoryService {
 
     /**
      * 입력 받은 테마와 나이, 언어를 통해 프롬프트 제공
-     *
      * @param age
      * @param language
      * @param given
@@ -122,81 +98,7 @@ public class StoryService {
     }
 
     /**
-     * 동화 생성 요청을 전송
-     *
-     * @param prompt
-     * @param language
-     * @return
-     */
-    private String sendStoryCreationRequest(String prompt, Language language) {
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", language == Language.KO ? "chatgpt-4o-latest" : "gpt-4o-mini");
-        requestBody.put("max_tokens", 2048);
-        requestBody.put("response_format", Map.of("type", "json_object"));
-        requestBody.put("temperature", 0.9);
-        requestBody.put("messages", new Object[]{
-                Map.of("role", "system", "content", promptsConfig.getGenerateCommand()),
-                Map.of("role", "user", "content", prompt)
-        });
-
-        ResponseEntity<String> response = openAIClient.sendChatRequest(
-                "Bearer " + apiKey,
-                "application/json",
-                requestBody
-        );
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
-        }
-        return parseChatGptResponse(response.getBody());
-    }
-
-    /**
-     * GPT의 응답을 받아서 필요한 content만 파싱
-     *
-     * @param responseBody
-     * @return
-     */
-    private String parseChatGptResponse(String responseBody) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-
-            return rootNode.path("choices").get(0).path("message").path("content").asText();
-        } catch (Exception e) {
-            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
-        }
-    }
-
-    /**
-     * 동화 제목, 내용 파싱
-     *
-     * @param response
-     * @return
-     */
-    private Map<String, String> parseStoryResponse(String response) {
-        Map<String, String> parsedStory = new HashMap<>();
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        try {
-            JsonNode rootNode = objectMapper.readTree(response);
-
-            String title = rootNode.path("title").asText().trim();
-            String content = rootNode.path("content").asText().trim();
-
-            parsedStory.put("title", title);
-            parsedStory.put("content", content);
-        } catch (Exception e) {
-            log.warn("Json parsing error: {}", response);
-            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
-        }
-
-        return parsedStory;
-    }
-
-    /**
      * 동화 상세 수정
-     *
      * @param memberId
      * @param storyId
      * @param requestDto
@@ -219,7 +121,6 @@ public class StoryService {
 
     /**
      * 동화 상세 조회
-     *
      * @param storyId
      * @param memberId
      * @return
@@ -238,12 +139,11 @@ public class StoryService {
 
     /**
      * 동화 좋아요
-     *
      * @param storyId
      * @param memberId
      */
     @Transactional
-    public void addLike(String storyId, Long memberId) {
+    public void likeStory(String storyId, Long memberId) {
         Story story = storyRepository.findByIdOrThrow(storyId);
 
         if (storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId).isPresent()) {
@@ -260,12 +160,11 @@ public class StoryService {
 
     /**
      * 동화 좋아요 취소
-     *
      * @param storyId
      * @param memberId
      */
     @Transactional
-    public void removeLike(String storyId, Long memberId) {
+    public void unlikeStory(String storyId, Long memberId) {
         Story story = storyRepository.findByIdOrThrow(storyId);
 
         storyLikeRepository.delete(storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId)
@@ -278,12 +177,11 @@ public class StoryService {
 
     /**
      * 동화 TTS 반환 - TTS가 이미 있다면 그대로 전달, 없다면 TTS 생성 요청 후 전달
-     *
      * @param storyId
      * @return
      */
     @Transactional
-    public String findOrCreateStoryTTS(String storyId) {
+    public String getOrRegisterStoryTTS(String storyId) {
         Story story = storyRepository.findByIdOrThrow(storyId);
 
         // 이미 해당 동화의 TTS가 저장되어 있다면 반환
@@ -291,256 +189,8 @@ public class StoryService {
             return story.getTtsUrl();
         }
 
-        StoryDto.TTSCreationRequest ttsCreationRequest = StoryDto.TTSCreationRequest.builder()
-                .file_name(storyId)
-                .text(story.getContent())
-                .language(story.getLanguage() == Language.EN ? "EN" : "KR")
-                .build();
-
-        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest(
-                "application/json",
-                ttsCreationRequest
-        );
-
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            // 생성된 TTS를 S3에 업로드
-            String ttsUrl = s3Utils.uploadTTSToS3("tts/", storyId, response.getBody());
-            storyRepository.save(story.updateTTSUrl(ttsUrl));
-            return ttsUrl;
-        } else {
-            throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
-        }
-    }
-
-    /**
-     * 동화 질문 생성
-     *
-     * @param storyId
-     * @return
-     */
-    @Transactional
-    public StoryDto.StoryQuestionResponse generateQuestions(String storyId) {
-        Story story = storyRepository.findByIdOrThrow(storyId);
-
-        StoryQuestion storyQuestion = storyQuestionRepository.save(StoryQuestion.builder()
-                .storyId(storyId)
-                .language(story.getLanguage())
-                .build());
-
-        // 동화 질문 생성 요청 및 파싱 후 저장
-        parseQuestion(sendQuestionRequest(story.getLanguage(), story.getAge(), story.getContent()), storyQuestion);
-
-        return StoryDto.StoryQuestionResponse.builder()
-                .storyquestion(storyQuestion)
-                .build();
-    }
-
-    /**
-     * 동화 질문 생성 요청 전송
-     *
-     * @param language
-     * @param age
-     * @param story
-     * @return
-     */
-    private String sendQuestionRequest(Language language, int age, String story) {
-        String template = promptsConfig.getQuestion();
-        template = template.replace("{age}", Integer.toString(age));
-        switch (language) {
-            case KO -> template = template.replace("{language}", "korean");
-            case EN -> template = template.replace("{language}", "english");
-        }
-
-        // 동화 질문 생성 요청 전송
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "gpt-4o-mini");
-        requestBody.put("response_format", Map.of("type", "json_object"));
-        requestBody.put("messages", new Object[]{
-                Map.of("role", "system", "content", template),
-                Map.of("role", "user", "content", story)
-        });
-
-        ResponseEntity<String> response = openAIClient.sendChatRequest(
-                "Bearer " + apiKey,
-                "application/json",
-                requestBody
-        );
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.QUESTION_GENERATION_FAILED);
-        }
-        return parseChatGptResponse(response.getBody());
-    }
-
-    /**
-     * 동화 질문 파싱 후 저장
-     *
-     * @param input
-     * @param storyQuestion
-     */
-    private void parseQuestion(String input, StoryQuestion storyQuestion) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            Map<String, String> jsonMap = objectMapper.readValue(input, new TypeReference<Map<String, String>>() {});
-
-            // Q와 A 키를 순회하며 매핑
-            for (int i = 1; i < 4; i++) {
-                QuestionAnswer pair = questionAnswerRepository.save(QuestionAnswer.builder()
-                        .question(jsonMap.get("Q" + i).trim())
-                        .sampleAnswer(jsonMap.get("A" + i).trim())
-                        .storyQuestion(storyQuestion)
-                        .build());
-            }
-        } catch (IOException e) {
-            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
-        }
-    }
-
-
-    /**
-     * 동화 질문 TTS로 변환후 S3 업로드 후 링크 반환 - 응답이 오면 S3에서 해당 파일 삭제 필요
-     *
-     * @param questionId
-     * @param question
-     * @param language
-     * @return
-     */
-    public String getQuestionTTS(Long questionId, String question, Language language) {
-        // TTS 생성 요청 전송
-        StoryDto.TTSCreationRequest ttsCreationRequest = StoryDto.TTSCreationRequest.builder()
-                .text(question)
-                .file_name(String.valueOf(questionId))
-                .language(language == Language.EN ? "EN" : "KR")
-                .build();
-
-        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest(
-                "application/json",
-                ttsCreationRequest
-        );
-
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            // 생성된 TTS를 S3에 업로드
-            return s3Utils.uploadTTSToS3("tts_question/", String.valueOf(questionId), response.getBody());
-        } else {
-            throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
-        }
-    }
-
-    /**
-     * 동화 요약 요청을 전송
-     *
-     * @param content
-     * @return
-     */
-    private String sendSummaryRequest(String content) {
-        String template = promptsConfig.getGenerateSummary().replace("{story}", content);
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "gpt-4o-mini");
-        requestBody.put("temperature", 0.7);
-        requestBody.put("messages", new Object[]{
-                Map.of("role", "system", "content", "You are making a prompt for an image generation model which image will be used as children's book cover."),
-                Map.of("role", "user", "content", template)
-        });
-
-        ResponseEntity<String> response = openAIClient.sendChatRequest(
-                "Bearer " + apiKey,
-                "application/json",
-                requestBody
-        );
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.STORY_SUMMARY_FAILED);
-        }
-        return parseChatGptResponse(response.getBody());
-    }
-
-    /**
-     * 동화 이미지 생성 요청을 전송
-     *
-     * @param scene
-     * @return
-     */
-    private String sendImageRequest(String storyId, String scene) {
-        String template = promptsConfig.getGenerateImage().replace("{scene}", scene);
-
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "dall-e-3");
-        requestBody.put("prompt", template);
-        requestBody.put("quality", "standard");
-        requestBody.put("n", 1);
-        requestBody.put("size", "1024x1024");
-
-        ResponseEntity<String> response = openAIClient.sendImageRequest(
-                "Bearer " + apiKey,
-                "application/json",
-                requestBody
-        );
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
-        }
-        String imageUrl = parseImageResponse(response.getBody());
-        return s3Utils.uploadImageFromUrl("cover/", storyId, imageUrl);
-    }
-
-    /**
-     * 이미지 응답 파싱
-     *
-     * @param responseBody
-     * @return
-     */
-    private String parseImageResponse(String responseBody) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-            JsonNode dataNode = rootNode.path("data");
-            if (dataNode.isArray() && !dataNode.isEmpty()) {
-                return dataNode.get(0).path("url").asText();
-            } else {
-                throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
-            }
-        } catch (JsonProcessingException e) {
-            throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
-        }
-    }
-
-    /**
-     * STT 요청 전송 및 응답을 저장
-     * @param file
-     */
-    @Transactional
-    public String sendSTTRequest(MultipartFile file) {
-        ResponseEntity<String> response = openAIClient.sendSTTRequest(
-                "Bearer " + apiKey,
-                "whisper-1",
-                file
-        );
-        Long questionId = Long.parseLong(Objects.requireNonNull(file.getOriginalFilename()).replace("-recorded.mp3", ""));
-        QuestionAnswer questionAnswer = questionAnswerRepository.findById(questionId).orElseThrow(
-                () -> new StoryException(StoryErrorCode.INVALID_FILE_NAME)
-        );
-
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return questionAnswer.updateAnswer(parseSTTResponse(response.getBody()));
-        } else {
-            throw new StoryException(StoryErrorCode.STT_GENERATION_FAILED);
-        }
-    }
-
-    /**
-     * STT 응답 파싱
-     *
-     * @param response
-     * @return
-     */
-    private String parseSTTResponse(String response) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            JsonNode rootNode = objectMapper.readTree(response);
-            return rootNode.path("text").asText().trim();
-        } catch (Exception e) {
-            log.warn("Json parsing error: {}", response);
-            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
-        }
+        String ttsUrl = externalApiService.sendTTSRequest(storyId, story);
+        storyRepository.save(story.updateTTSUrl(ttsUrl));
+        return ttsUrl;
     }
 }

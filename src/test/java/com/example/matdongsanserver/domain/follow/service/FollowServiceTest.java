@@ -1,6 +1,5 @@
 package com.example.matdongsanserver.domain.follow.service;
 
-import com.example.matdongsanserver.domain.child.dto.ChildDto;
 import com.example.matdongsanserver.domain.follow.exception.FollowErrorCode;
 import com.example.matdongsanserver.domain.follow.exception.FollowException;
 import com.example.matdongsanserver.domain.follow.repository.FollowRepository;

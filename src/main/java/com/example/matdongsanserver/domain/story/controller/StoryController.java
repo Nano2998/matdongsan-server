@@ -19,11 +19,11 @@ public class StoryController {
 
     @Operation(summary = "동화 생성")
     @PostMapping
-    public ResponseEntity<StoryDto.StoryCreationResponse> generateStory(
+    public ResponseEntity<StoryDto.StoryCreationResponse> registerStory(
             @RequestBody StoryDto.StoryCreationRequest requestDto
     ) {
         return ResponseEntity.ok()
-                .body(storyService.createStory(SecurityUtils.getLoggedInMemberId(), requestDto));
+                .body(storyService.registerStory(SecurityUtils.getLoggedInMemberId(), requestDto));
     }
 
     @Operation(summary = "동화 상세 수정")
@@ -51,7 +51,7 @@ public class StoryController {
             @PathVariable String storyId
     ) {
         return ResponseEntity.ok()
-                .body(storyService.findOrCreateStoryTTS(storyId));
+                .body(storyService.getOrRegisterStoryTTS(storyId));
     }
 
     @Operation(summary = "동화 좋아요")
@@ -59,7 +59,7 @@ public class StoryController {
     public ResponseEntity<Void> likeStory(
             @PathVariable String storyId
     ) {
-        storyService.addLike(storyId, SecurityUtils.getLoggedInMemberId());
+        storyService.likeStory(storyId, SecurityUtils.getLoggedInMemberId());
         return ResponseEntity.noContent().build();
     }
 
@@ -68,17 +68,8 @@ public class StoryController {
     public ResponseEntity<Void> unlikeStory(
             @PathVariable String storyId
     ) {
-        storyService.removeLike(storyId, SecurityUtils.getLoggedInMemberId());
+        storyService.unlikeStory(storyId, SecurityUtils.getLoggedInMemberId());
         return ResponseEntity.noContent().build();
-    }
-
-    @Operation(summary = "동화 질문 생성")
-    @GetMapping("/questions/{storyId}")
-    public ResponseEntity<StoryDto.StoryQuestionResponse> generateQuestions(
-            @PathVariable String storyId
-    ) {
-        return ResponseEntity.ok()
-                .body(storyService.generateQuestions(storyId));
     }
 
     @GetMapping("/error")
