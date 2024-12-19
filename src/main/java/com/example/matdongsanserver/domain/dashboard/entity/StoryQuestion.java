@@ -1,4 +1,4 @@
-package com.example.matdongsanserver.domain.story.entity;
+package com.example.matdongsanserver.domain.dashboard.entity;
 
 import com.example.matdongsanserver.common.model.BaseTimeEntity;
 import com.example.matdongsanserver.domain.child.entity.Child;

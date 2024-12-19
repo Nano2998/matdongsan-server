@@ -4,26 +4,25 @@ import com.example.matdongsanserver.domain.child.dto.ChildDto;
 import com.example.matdongsanserver.domain.child.exception.ChildErrorCode;
 import com.example.matdongsanserver.domain.child.exception.ChildException;
 import com.example.matdongsanserver.domain.child.service.ChildService;
-import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.child.entity.Child;
+import com.example.matdongsanserver.domain.dashboard.service.DashboardService;
+import com.example.matdongsanserver.domain.library.service.LibraryService;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
-import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
-import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.child.repository.ChildRepository;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.member.service.MemberService;
 import com.example.matdongsanserver.domain.module.service.ModuleService;
-import com.example.matdongsanserver.domain.story.AgeType;
-import com.example.matdongsanserver.domain.story.LangType;
-import com.example.matdongsanserver.domain.story.SortType;
-import com.example.matdongsanserver.domain.story.dto.ParentDto;
+import com.example.matdongsanserver.domain.library.AgeType;
+import com.example.matdongsanserver.domain.library.LangType;
+import com.example.matdongsanserver.domain.library.SortType;
+import com.example.matdongsanserver.domain.dashboard.dto.DashboardDto;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
-import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
-import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
+import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
+import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
-import com.example.matdongsanserver.domain.story.repository.StoryQuestionRepository;
+import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,7 +40,7 @@ import static org.assertj.core.api.Assertions.*;
 @Transactional
 @SpringBootTest
 @DisplayName("대시보드 서비스 테스트")
-class ParentServiceTest {
+class DashboardServiceTest {
 
     @Autowired
     StoryQuestionRepository storyQuestionRepository;
@@ -58,7 +57,7 @@ class ParentServiceTest {
     @Autowired
     ChildRepository childRepository;
     @Autowired
-    ParentService parentService;
+    DashboardService parentService;
     @Autowired
     ModuleService moduleService;
     @Autowired
@@ -102,7 +101,7 @@ class ParentServiceTest {
         storyQuestionRepository.saveAll(List.of(question1, question2));
 
         // When
-        Page<ParentDto.ParentQnaLogRequest> qnaLog = parentService.getQnaLog(member.getId(), Pageable.unpaged());
+        Page<DashboardDto.ParentQnaLogRequest> qnaLog = parentService.getQnaLog(member.getId(), Pageable.unpaged());
 
         // Then
         assertThat(qnaLog).isNotNull();
@@ -146,7 +145,7 @@ class ParentServiceTest {
         storyQuestionRepository.saveAll(List.of(question1, question2, question3));
 
         // When
-        Page<ParentDto.ParentQnaLogRequest> qnaLog = parentService.getChildQnaLog(child2.getId(), Pageable.unpaged());
+        Page<DashboardDto.ParentQnaLogRequest> qnaLog = parentService.getChildQnaLog(child2.getId(), Pageable.unpaged());
 
         // Then
         assertThat(qnaLog).isNotNull();

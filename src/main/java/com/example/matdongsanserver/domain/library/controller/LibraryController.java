@@ -1,11 +1,11 @@
-package com.example.matdongsanserver.domain.story.controller;
+package com.example.matdongsanserver.domain.library.controller;
 
 import com.example.matdongsanserver.common.utils.SecurityUtils;
-import com.example.matdongsanserver.domain.story.AgeType;
-import com.example.matdongsanserver.domain.story.LangType;
-import com.example.matdongsanserver.domain.story.SortType;
+import com.example.matdongsanserver.domain.library.AgeType;
+import com.example.matdongsanserver.domain.library.LangType;
+import com.example.matdongsanserver.domain.library.SortType;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
-import com.example.matdongsanserver.domain.story.service.LibraryService;
+import com.example.matdongsanserver.domain.library.service.LibraryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

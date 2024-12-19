@@ -1,10 +1,10 @@
-package com.example.matdongsanserver.domain.story.dto;
+package com.example.matdongsanserver.domain.dashboard.dto;
 
 import lombok.*;
 
 import java.time.LocalDateTime;
 
-public class ParentDto {
+public class DashboardDto {
 
     @Builder
     @Getter

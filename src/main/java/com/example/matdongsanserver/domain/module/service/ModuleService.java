@@ -3,10 +3,10 @@ package com.example.matdongsanserver.domain.module.service;
 import com.example.matdongsanserver.domain.child.repository.ChildRepository;
 import com.example.matdongsanserver.domain.module.exception.ModuleErrorCode;
 import com.example.matdongsanserver.domain.module.exception.ModuleException;
-import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
+import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
-import com.example.matdongsanserver.domain.story.repository.StoryQuestionRepository;
+import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -61,9 +61,7 @@ public class ModuleService {
 
     @Transactional
     public void sendQuestion(Long storyQuestionId, Long childId) {
-        StoryQuestion storyQuestion = storyQuestionRepository.findById(storyQuestionId).orElseThrow(
-                () -> new StoryException(StoryErrorCode.STORY_QUESTION_NOT_FOUND)
-        );
+        StoryQuestion storyQuestion = storyQuestionRepository.findByIdOrThrow(storyQuestionId);
 
         // 질문에 응답하는 자녀를 설정
         storyQuestion.updateChild(childRepository.findByIdOrThrow(childId));

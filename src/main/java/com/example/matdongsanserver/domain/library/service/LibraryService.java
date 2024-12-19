@@ -1,8 +1,8 @@
-package com.example.matdongsanserver.domain.story.service;
+package com.example.matdongsanserver.domain.library.service;
 
-import com.example.matdongsanserver.domain.story.AgeType;
-import com.example.matdongsanserver.domain.story.LangType;
-import com.example.matdongsanserver.domain.story.SortType;
+import com.example.matdongsanserver.domain.library.AgeType;
+import com.example.matdongsanserver.domain.library.LangType;
+import com.example.matdongsanserver.domain.library.SortType;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
@@ -60,6 +60,10 @@ public class LibraryService {
 
     /**
      * 특정 작가의 동화 리스트 조회
+     * @param authorId
+     * @param sortType
+     * @param pageable
+     * @return
      */
     public Page<StoryDto.StorySummary> getStoriesByAuthorId(Long authorId, SortType sortType, Pageable pageable) {
         return switch (sortType) {
@@ -72,6 +76,10 @@ public class LibraryService {
 
     /**
      * 내가 만든 동화 리스트 조회
+     * @param memberId
+     * @param sortType
+     * @param pageable
+     * @return
      */
     public Page<StoryDto.StorySummary> getMyStories(Long memberId, SortType sortType, Pageable pageable) {
         return switch (sortType) {
@@ -84,6 +92,9 @@ public class LibraryService {
 
     /**
      * 좋아요 누른 동화 리스트
+     * @param memberId
+     * @param pageable
+     * @return
      */
     public Page<StoryDto.StorySummary> getLikedStories(Long memberId, Pageable pageable) {
         Page<StoryLike> likedStoryIdsPage = storyLikeRepository.findByMemberId(memberId, pageable);
@@ -129,6 +140,11 @@ public class LibraryService {
                 .toList();
     }
 
+    /**
+     * 최근 본 동화의 아이디 리스트를 가져옴
+     * @param memberId
+     * @return
+     */
     private List<String> getRecentStoryIds(Long memberId) {
         String redisKey = "user:" + memberId + ":recentTales";
         return redisTemplate.opsForList().range(redisKey, 0, -1);
@@ -141,9 +157,7 @@ public class LibraryService {
      * @return
      */
     public Page<StoryDto.StorySummary> searchStories(List<String> tags, Pageable pageable) {
-
         return storyRepository.findByTags(tags, pageable)
                 .map(StoryDto.StorySummary::new);
     }
-
 }

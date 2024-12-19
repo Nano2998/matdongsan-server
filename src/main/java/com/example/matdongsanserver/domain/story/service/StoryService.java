@@ -2,21 +2,22 @@ package com.example.matdongsanserver.domain.story.service;
 
 import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.common.utils.S3Utils;
+import com.example.matdongsanserver.domain.library.service.LibraryService;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.story.client.OpenAiClient;
 import com.example.matdongsanserver.domain.story.client.TTSClient;
-import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
+import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
-import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
+import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
-import com.example.matdongsanserver.domain.story.repository.QuestionAnswerRepository;
+import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRepository;
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
-import com.example.matdongsanserver.domain.story.repository.StoryQuestionRepository;
+import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -203,8 +204,7 @@ public class StoryService {
      */
     @Transactional
     public StoryDto.StoryDetail updateStoryDetail(Long memberId, String storyId, StoryDto.StoryUpdateRequest requestDto) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND))
+        Story story = storyRepository.findByIdOrThrow(storyId)
                 .updateStoryDetail(requestDto);
 
         if (!story.getMemberId().equals(memberId)) {
@@ -225,8 +225,7 @@ public class StoryService {
      * @return
      */
     public StoryDto.StoryDetail getStoryDetail(String storyId, Long memberId) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
+        Story story = storyRepository.findByIdOrThrow(storyId);
 
         // 조회하는 동화를 최근 동화에 포함
         libraryService.addRecentStories(memberId, storyId);
@@ -245,9 +244,7 @@ public class StoryService {
      */
     @Transactional
     public void addLike(String storyId, Long memberId) {
-        Story story = storyRepository.findById(storyId).orElseThrow(
-                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
-        );
+        Story story = storyRepository.findByIdOrThrow(storyId);
 
         if (storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId).isPresent()) {
             throw new StoryException(StoryErrorCode.LIKE_ALREADY_EXISTS);   // 이미 좋아요를 누른 경우
@@ -269,9 +266,7 @@ public class StoryService {
      */
     @Transactional
     public void removeLike(String storyId, Long memberId) {
-        Story story = storyRepository.findById(storyId).orElseThrow(
-                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
-        );
+        Story story = storyRepository.findByIdOrThrow(storyId);
 
         storyLikeRepository.delete(storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId)
                 .orElseThrow(
@@ -289,8 +284,7 @@ public class StoryService {
      */
     @Transactional
     public String findOrCreateStoryTTS(String storyId) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_NOT_FOUND));
+        Story story = storyRepository.findByIdOrThrow(storyId);
 
         // 이미 해당 동화의 TTS가 저장되어 있다면 반환
         if (!story.getTtsUrl().isBlank()){
@@ -326,9 +320,7 @@ public class StoryService {
      */
     @Transactional
     public StoryDto.StoryQuestionResponse generateQuestions(String storyId) {
-        Story story = storyRepository.findById(storyId).orElseThrow(
-                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
-        );
+        Story story = storyRepository.findByIdOrThrow(storyId);
 
         StoryQuestion storyQuestion = storyQuestionRepository.save(StoryQuestion.builder()
                 .storyId(storyId)

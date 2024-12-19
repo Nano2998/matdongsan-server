@@ -1,7 +1,7 @@
 package com.example.matdongsanserver.domain.story.dto;
 
-import com.example.matdongsanserver.domain.story.entity.QuestionAnswer;
-import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
+import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
+import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import lombok.*;

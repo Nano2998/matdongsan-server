@@ -1,11 +1,12 @@
 package com.example.matdongsanserver.domain.story.service;
 
+import com.example.matdongsanserver.domain.library.service.LibraryService;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import com.example.matdongsanserver.domain.story.AgeType;
-import com.example.matdongsanserver.domain.story.LangType;
-import com.example.matdongsanserver.domain.story.SortType;
+import com.example.matdongsanserver.domain.library.AgeType;
+import com.example.matdongsanserver.domain.library.LangType;
+import com.example.matdongsanserver.domain.library.SortType;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;

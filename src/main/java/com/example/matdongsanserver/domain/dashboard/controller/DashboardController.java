@@ -1,9 +1,9 @@
-package com.example.matdongsanserver.domain.story.controller;
+package com.example.matdongsanserver.domain.dashboard.controller;
 
 import com.example.matdongsanserver.common.utils.SecurityUtils;
-import com.example.matdongsanserver.domain.story.dto.ParentDto;
+import com.example.matdongsanserver.domain.dashboard.dto.DashboardDto;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
-import com.example.matdongsanserver.domain.story.service.ParentService;
+import com.example.matdongsanserver.domain.dashboard.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -18,13 +18,13 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/dashboard")
-public class ParentController {
+public class DashboardController {
 
-    private final ParentService parentService;
+    private final DashboardService parentService;
 
     @Operation(summary = "대시보드 QnA 모두보기")
     @GetMapping
-    public ResponseEntity<Page<ParentDto.ParentQnaLogRequest>> getAllQna(
+    public ResponseEntity<Page<DashboardDto.ParentQnaLogRequest>> getAllQna(
             Pageable pageable
     ) {
         return ResponseEntity.ok().body(parentService.getQnaLog(SecurityUtils.getLoggedInMemberId(), pageable));
@@ -32,7 +32,7 @@ public class ParentController {
 
     @Operation(summary = "특정 자녀 QnA 보기")
     @GetMapping("/{childId}")
-    public ResponseEntity<Page<ParentDto.ParentQnaLogRequest>> getChildQna(
+    public ResponseEntity<Page<DashboardDto.ParentQnaLogRequest>> getChildQna(
             @PathVariable Long childId,
             Pageable pageable
     ) {

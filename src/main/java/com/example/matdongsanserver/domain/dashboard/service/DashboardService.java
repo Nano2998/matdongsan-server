@@ -1,21 +1,23 @@
-package com.example.matdongsanserver.domain.story.service;
+package com.example.matdongsanserver.domain.dashboard.service;
 
 import com.example.matdongsanserver.domain.child.dto.ChildDto;
 import com.example.matdongsanserver.domain.child.service.ChildService;
+import com.example.matdongsanserver.domain.dashboard.exception.DashboardErrorCode;
+import com.example.matdongsanserver.domain.dashboard.exception.DashboardException;
 import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
 import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.member.service.MemberService;
-import com.example.matdongsanserver.domain.story.dto.ParentDto;
+import com.example.matdongsanserver.domain.dashboard.dto.DashboardDto;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
-import com.example.matdongsanserver.domain.story.entity.StoryQuestion;
+import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
-import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
-import com.example.matdongsanserver.domain.story.exception.StoryException;
-import com.example.matdongsanserver.domain.story.repository.QuestionAnswerRepository;
+import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRepository;
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
-import com.example.matdongsanserver.domain.story.repository.StoryQuestionRepository;
+import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
+import com.example.matdongsanserver.domain.library.service.LibraryService;
+import com.example.matdongsanserver.domain.story.service.StoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -31,7 +33,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ParentService {
+public class DashboardService {
 
     private final StoryQuestionRepository storyQuestionRepository;
     private final MemberRepository memberRepository;
@@ -48,7 +50,7 @@ public class ParentService {
      * @param memberId
      * @return
      */
-    public Page<ParentDto.ParentQnaLogRequest> getQnaLog(Long memberId, Pageable pageable) {
+    public Page<DashboardDto.ParentQnaLogRequest> getQnaLog(Long memberId, Pageable pageable) {
         if(!memberRepository.existsById(memberId)) {
             throw new MemberException(MemberErrorCode.MEMBER_NOT_FOUND);
         }
@@ -71,7 +73,7 @@ public class ParentService {
         Map<String, String> storyTitleMap = stories.stream()
                 .collect(Collectors.toMap(Story::getId, Story::getTitle));
 
-        return childQuestions.map(question -> ParentDto.ParentQnaLogRequest.builder()
+        return childQuestions.map(question -> DashboardDto.ParentQnaLogRequest.builder()
                 .id(question.getId())
                 .createAt(question.getCreatedAt())
                 .title(storyTitleMap.get(question.getStoryId()))
@@ -85,7 +87,7 @@ public class ParentService {
      * @param pageable
      * @return
      */
-    public Page<ParentDto.ParentQnaLogRequest> getChildQnaLog(Long childId, Pageable pageable) {
+    public Page<DashboardDto.ParentQnaLogRequest> getChildQnaLog(Long childId, Pageable pageable) {
         Page<StoryQuestion> childQuestions = storyQuestionRepository.findByChildId(childId, pageable);
 
         List<String> storyIds = childQuestions.getContent().stream()
@@ -98,7 +100,7 @@ public class ParentService {
         Map<String, String> storyTitleMap = stories.stream()
                 .collect(Collectors.toMap(Story::getId, Story::getTitle));
 
-        return childQuestions.map(question -> ParentDto.ParentQnaLogRequest.builder()
+        return childQuestions.map(question -> DashboardDto.ParentQnaLogRequest.builder()
                 .id(question.getId())
                 .createAt(question.getCreatedAt())
                 .title(storyTitleMap.get(question.getStoryId()))
@@ -113,13 +115,10 @@ public class ParentService {
      */
     public List<StoryDto.QnAs> getQnaDetail(Long qnaId) {
 
-        StoryQuestion storyQuestion = storyQuestionRepository.findById(qnaId)
-                .orElseThrow(() -> new StoryException(StoryErrorCode.STORY_QUESTION_NOT_FOUND));
+        StoryQuestion storyQuestion = storyQuestionRepository.findByIdOrThrow(qnaId);
 
         return storyQuestion.getQuestionAnswers().stream()
                 .map(StoryDto.QnAs::new)
                 .toList();
     }
-
-
 }
