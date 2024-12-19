@@ -71,9 +71,4 @@ public class StoryController {
         storyService.unlikeStory(storyId, SecurityUtils.getLoggedInMemberId());
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/error")
-    public String error() {
-        throw new RuntimeException("이것이 에러다. 희망편");
-    }
 }
