@@ -6,10 +6,8 @@ import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRe
 import com.example.matdongsanserver.domain.module.exception.ModuleErrorCode;
 import com.example.matdongsanserver.domain.module.exception.ModuleException;
 import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
-import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
-import com.example.matdongsanserver.domain.story.exception.StoryException;
 import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
-import com.example.matdongsanserver.domain.story.service.ExternalApiService;
+import com.example.matdongsanserver.common.external.ExternalApiRequest;
 import com.example.matdongsanserver.domain.story.service.StoryService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -43,7 +41,7 @@ public class ModuleService {
     private final StoryQuestionRepository storyQuestionRepository;
     private final ChildRepository childRepository;
     private final QuestionAnswerRepository questionAnswerRepository;
-    private final ExternalApiService externalApiService;
+    private final ExternalApiRequest externalApiRequest;
 
     @PostConstruct
     public void init() throws MqttException {
@@ -74,7 +72,7 @@ public class ModuleService {
         storyQuestion.updateChild(childRepository.findByIdOrThrow(childId));
 
         storyQuestion.getQuestionAnswers().forEach(
-                qna -> sendMqttMessage("play-and-record", externalApiService.getQuestionTTS(qna.getId(), qna.getQuestion(), storyQuestion.getLanguage()))
+                qna -> sendMqttMessage("play-and-record", externalApiRequest.getQuestionTTS(qna.getId(), qna.getQuestion(), storyQuestion.getLanguage()))
         );
     }
 
@@ -101,9 +99,9 @@ public class ModuleService {
 
         Long questionId = Long.parseLong(Objects.requireNonNull(file.getOriginalFilename()).replace("-recorded.mp3", ""));
         QuestionAnswer questionAnswer = questionAnswerRepository.findById(questionId).orElseThrow(
-                () -> new StoryException(StoryErrorCode.INVALID_FILE_NAME)
+                () -> new ModuleException(ModuleErrorCode.INVALID_FILE)
         );
 
-        return questionAnswer.updateAnswer(externalApiService.sendSTTRequest(file));
+        return questionAnswer.updateAnswer(externalApiRequest.sendSTTRequest(file));
     }
 }

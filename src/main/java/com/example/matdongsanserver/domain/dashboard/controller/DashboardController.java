@@ -22,7 +22,7 @@ public class DashboardController {
 
     private final DashboardService parentService;
 
-    @Operation(summary = "동화 질문 생성")
+    @Operation(summary = "동화 질문 생성 및 반환")
     @GetMapping("/questions/{storyId}")
     public ResponseEntity<DashboardDto.StoryQuestionResponse> registerQuestions(
             @PathVariable String storyId

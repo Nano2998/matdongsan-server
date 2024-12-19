@@ -1,39 +1,34 @@
-package com.example.matdongsanserver.domain.story.service;
+package com.example.matdongsanserver.common.external;
 
 import com.example.matdongsanserver.common.config.PromptsConfig;
+import com.example.matdongsanserver.common.exception.BusinessException;
+import com.example.matdongsanserver.common.exception.CommonErrorCode;
+import com.example.matdongsanserver.common.utils.ResponseParser;
 import com.example.matdongsanserver.common.utils.S3Utils;
-import com.example.matdongsanserver.domain.story.client.OpenAiClient;
-import com.example.matdongsanserver.domain.story.client.TTSClient;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
-import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
-import com.example.matdongsanserver.domain.story.exception.StoryException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
-@Service
+@Component
 @RequiredArgsConstructor
-public class ExternalApiService {
+public class ExternalApiRequest {
 
     private final OpenAiClient openAIClient;
     private final TTSClient ttsClient;
     private final S3Utils s3Utils;
     private final PromptsConfig promptsConfig;
+    private final ResponseParser responseParser;
 
     @Value("${openai.api.key}")
     private String apiKey;
@@ -62,50 +57,9 @@ public class ExternalApiService {
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.STORY_GENERATION_FAILED);
+            throw new BusinessException(CommonErrorCode.STORY_GENERATION_FAILED);
         }
-        return parseStoryResponse(parseChatGptResponse(response.getBody()));
-    }
-
-    /**
-     * GPT의 응답을 받아서 필요한 content만 파싱
-     * @param responseBody
-     * @return
-     */
-    private String parseChatGptResponse(String responseBody) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-
-            return rootNode.path("choices").get(0).path("message").path("content").asText();
-        } catch (Exception e) {
-            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
-        }
-    }
-
-    /**
-     * 동화 제목, 내용 파싱
-     * @param response
-     * @return
-     */
-    private Map<String, String> parseStoryResponse(String response) {
-        Map<String, String> parsedStory = new HashMap<>();
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        try {
-            JsonNode rootNode = objectMapper.readTree(response);
-
-            String title = rootNode.path("title").asText().trim();
-            String content = rootNode.path("content").asText().trim();
-
-            parsedStory.put("title", title);
-            parsedStory.put("content", content);
-        } catch (Exception e) {
-            log.warn("Json parsing error: {}", response);
-            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
-        }
-
-        return parsedStory;
+        return responseParser.extractStoryDetails(responseParser.extractChatGptContent(response.getBody()));
     }
 
     /**
@@ -130,9 +84,9 @@ public class ExternalApiService {
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.STORY_SUMMARY_FAILED);
+            throw new BusinessException(CommonErrorCode.STORY_SUMMARY_FAILED);
         }
-        return parseChatGptResponse(response.getBody());
+        return responseParser.extractChatGptContent(response.getBody());
     }
 
     /**
@@ -157,30 +111,10 @@ public class ExternalApiService {
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
+            throw new BusinessException(CommonErrorCode.STORY_IMAGE_GENERATION_FAILED);
         }
-        String imageUrl = parseImageResponse(response.getBody());
+        String imageUrl = responseParser.extractImageUrl(response.getBody());
         return s3Utils.uploadImageFromUrl("cover/", storyId, imageUrl);
-    }
-
-    /**
-     * 이미지 응답 파싱
-     * @param responseBody
-     * @return
-     */
-    private String parseImageResponse(String responseBody) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-            JsonNode dataNode = rootNode.path("data");
-            if (dataNode.isArray() && !dataNode.isEmpty()) {
-                return dataNode.get(0).path("url").asText();
-            } else {
-                throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
-            }
-        } catch (JsonProcessingException e) {
-            throw new StoryException(StoryErrorCode.STORY_IMAGE_GENERATION_FAILED);
-        }
     }
 
     /**
@@ -205,7 +139,7 @@ public class ExternalApiService {
             // 생성된 TTS를 S3에 업로드
             return s3Utils.uploadTTSToS3("tts/", storyId, response.getBody());
         } else {
-            throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
+            throw new BusinessException(CommonErrorCode.TTS_GENERATION_FAILED);
         }
     }
 
@@ -221,26 +155,9 @@ public class ExternalApiService {
         );
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return parseSTTResponse(response.getBody());
+            return responseParser.extractSttText(response.getBody());
         } else {
-            throw new StoryException(StoryErrorCode.STT_GENERATION_FAILED);
-        }
-    }
-
-    /**
-     * STT 응답 파싱
-     *
-     * @param response
-     * @return
-     */
-    private String parseSTTResponse(String response) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            JsonNode rootNode = objectMapper.readTree(response);
-            return rootNode.path("text").asText().trim();
-        } catch (Exception e) {
-            log.warn("Json parsing error: {}", response);
-            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
+            throw new BusinessException(CommonErrorCode.STT_GENERATION_FAILED);
         }
     }
 
@@ -275,23 +192,9 @@ public class ExternalApiService {
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new StoryException(StoryErrorCode.QUESTION_GENERATION_FAILED);
+            throw new BusinessException(CommonErrorCode.QUESTION_GENERATION_FAILED);
         }
-        return parseQuestion(parseChatGptResponse(response.getBody()));
-    }
-
-    /**
-     * 동화 질문 파싱
-     * @param input JSON 문자열 형식의 질문 응답
-     * @return List<Map<String, String>> 파싱된 질문과 답변 리스트
-     */
-    private List<Map<String, String>> parseQuestion(String input) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(input, new TypeReference<List<Map<String, String>>>() {});
-        } catch (IOException e) {
-            throw new StoryException(StoryErrorCode.JSON_PARSING_ERROR);
-        }
+        return responseParser.extractQuestions(responseParser.extractChatGptContent(response.getBody()));
     }
 
     /**
@@ -318,7 +221,7 @@ public class ExternalApiService {
             // 생성된 TTS를 S3에 업로드
             return s3Utils.uploadTTSToS3("tts_question/", String.valueOf(questionId), response.getBody());
         } else {
-            throw new StoryException(StoryErrorCode.TTS_GENERATION_FAILED);
+            throw new BusinessException(CommonErrorCode.TTS_GENERATION_FAILED);
         }
     }
 }

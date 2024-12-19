@@ -1,4 +1,4 @@
-package com.example.matdongsanserver.domain.story.client;
+package com.example.matdongsanserver.common.external;
 
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import org.springframework.cloud.openfeign.FeignClient;

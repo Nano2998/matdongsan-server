@@ -12,7 +12,7 @@ import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRepository;
 import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
-import com.example.matdongsanserver.domain.story.service.ExternalApiService;
+import com.example.matdongsanserver.common.external.ExternalApiRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -35,7 +35,7 @@ public class DashboardService {
     private final QuestionAnswerRepository questionAnswerRepository;
     private final ChildService childService;
     private final StoryRepository storyRepository;
-    private final ExternalApiService externalApiService;
+    private final ExternalApiRequest externalApiRequest;
 
     /**
      * 동화 질문 생성
@@ -55,7 +55,7 @@ public class DashboardService {
         );
 
         // 동화 질문 생성 요청 및 파싱
-        List<Map<String, String>> parsedQuestions = externalApiService.sendQuestionRequest(
+        List<Map<String, String>> parsedQuestions = externalApiRequest.sendQuestionRequest(
                 story.getLanguage(),
                 story.getAge(),
                 story.getContent()

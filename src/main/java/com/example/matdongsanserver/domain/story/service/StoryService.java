@@ -4,17 +4,14 @@ import com.example.matdongsanserver.common.config.PromptsConfig;
 import com.example.matdongsanserver.domain.library.service.LibraryService;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
+import com.example.matdongsanserver.common.external.ExternalApiRequest;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
-import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
 import com.example.matdongsanserver.domain.story.exception.StoryException;
-import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRepository;
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
-import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +30,7 @@ public class StoryService {
     private final MemberRepository memberRepository;
     private final StoryLikeRepository storyLikeRepository;
     private final LibraryService libraryService;
-    private final ExternalApiService externalApiService;
+    private final ExternalApiRequest externalApiRequest;
 
     /**
      * 동화 생성
@@ -50,7 +47,7 @@ public class StoryService {
         String prompt = getPromptForAge(requestDto.getAge(), language, requestDto.getGiven());
 
         // 동화 생성 요청 및 응답 파싱
-        Map<String, String> storyDetails = externalApiService.sendStoryCreationRequest(prompt, language);
+        Map<String, String> storyDetails = externalApiRequest.sendStoryCreationRequest(prompt, language);
 
         Story save = storyRepository.save(Story.builder()
                 .age(requestDto.getAge())
@@ -64,8 +61,8 @@ public class StoryService {
                 .build());
 
         // 동화 요약 및 커버 이미지 생성 요청
-        String summary = externalApiService.sendSummaryRequest(storyDetails.get("content"));
-        save.updateCoverUrl(externalApiService.sendImageRequest(save.getId(), summary));
+        String summary = externalApiRequest.sendSummaryRequest(storyDetails.get("content"));
+        save.updateCoverUrl(externalApiRequest.sendImageRequest(save.getId(), summary));
         storyRepository.save(save);
 
         // 생성된 동화를 최근 동화에 포함
@@ -189,7 +186,7 @@ public class StoryService {
             return story.getTtsUrl();
         }
 
-        String ttsUrl = externalApiService.sendTTSRequest(storyId, story);
+        String ttsUrl = externalApiRequest.sendTTSRequest(storyId, story);
         storyRepository.save(story.updateTTSUrl(ttsUrl));
         return ttsUrl;
     }

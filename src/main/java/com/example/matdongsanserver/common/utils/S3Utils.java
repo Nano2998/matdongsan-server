@@ -44,7 +44,6 @@ public class S3Utils {
             log.info("S3 파일 업로드 성공: {}", fileUrl);
             return fileUrl;
         } catch (Exception e) {
-            log.error("S3 파일 업로드 실패: {}", e.getMessage());
             throw new BusinessException(CommonErrorCode.S3_FILE_UPLOAD_FAILED);
         }
     }
@@ -66,7 +65,6 @@ public class S3Utils {
 
             return uploadFile(folderName, fileName, new ByteArrayInputStream(fileData), metadata);
         } catch (Exception e) {
-            log.error("URL에서 S3로 파일 업로드 실패: {}", e.getMessage());
             throw new BusinessException(CommonErrorCode.S3_URL_IMAGE_UPLOAD_FAILED);
         }
     }
