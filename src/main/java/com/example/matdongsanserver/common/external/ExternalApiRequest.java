@@ -34,42 +34,27 @@ public class ExternalApiRequest {
     private String apiKey;
 
     /**
-     * 공통 요청 생성 메서드
-     * @param model
-     * @param messages
-     * @param additionalParams
-     * @return
-     */
-    private Map<String, Object> createRequestBody(String model, Object[] messages, Map<String, Object> additionalParams) {
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", model);
-        requestBody.put("messages", messages);
-        if (additionalParams != null) {
-            requestBody.putAll(additionalParams);
-        }
-        return requestBody;
-    }
-
-    /**
      * 동화 생성 요청을 전송
      * @param prompt
      * @param language
      * @return
      */
     public Map<String, String> sendStoryCreationRequest(String prompt, Language language) {
-        String model = language == Language.KO ? "chatgpt-4o-latest" : "gpt-4o-mini";
-        Object[] messages = {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", language == Language.KO ? "chatgpt-4o-latest" : "gpt-4o-mini");
+        requestBody.put("max_tokens", 2048);
+        requestBody.put("response_format", Map.of("type", "json_object"));
+        requestBody.put("temperature", 0.9);
+        requestBody.put("messages", new Object[]{
                 Map.of("role", "system", "content", promptsConfig.getGenerateCommand()),
                 Map.of("role", "user", "content", prompt)
-        };
+        });
 
-        Map<String, Object> requestBody = createRequestBody(model, messages, Map.of(
-                "max_tokens", 2048,
-                "response_format", Map.of("type", "json_object"),
-                "temperature", 0.9
-        ));
-
-        ResponseEntity<String> response = openAIClient.sendChatRequest("Bearer " + apiKey, "application/json", requestBody);
+        ResponseEntity<String> response = openAIClient.sendChatRequest(
+                "Bearer " + apiKey,
+                "application/json",
+                requestBody
+        );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new BusinessException(CommonErrorCode.STORY_GENERATION_FAILED);
@@ -84,16 +69,19 @@ public class ExternalApiRequest {
      */
     public String sendSummaryRequest(String content) {
         String template = promptsConfig.getGenerateSummary().replace("{story}", content);
-        Object[] messages = {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "gpt-4o-mini");
+        requestBody.put("temperature", 0.7);
+        requestBody.put("messages", new Object[]{
                 Map.of("role", "system", "content", "You are making a prompt for an image generation model which image will be used as children's book cover."),
                 Map.of("role", "user", "content", template)
-        };
+        });
 
-        Map<String, Object> requestBody = createRequestBody("gpt-4o-mini", messages, Map.of(
-                "temperature", 0.7
-        ));
-
-        ResponseEntity<String> response = openAIClient.sendChatRequest("Bearer " + apiKey, "application/json", requestBody);
+        ResponseEntity<String> response = openAIClient.sendChatRequest(
+                "Bearer " + apiKey,
+                "application/json",
+                requestBody
+        );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new BusinessException(CommonErrorCode.STORY_SUMMARY_FAILED);
@@ -103,57 +91,30 @@ public class ExternalApiRequest {
 
     /**
      * 동화 이미지 생성 요청을 전송
-     * @param storyId
      * @param scene
      * @return
      */
     public String sendImageRequest(String storyId, String scene) {
         String template = promptsConfig.getGenerateImage().replace("{scene}", scene);
 
-        Map<String, Object> requestBody = createRequestBody("dall-e-3", null, Map.of(
-                "prompt", template,
-                "quality", "standard",
-                "n", 1,
-                "size", "1024x1024"
-        ));
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "dall-e-3");
+        requestBody.put("prompt", template);
+        requestBody.put("quality", "standard");
+        requestBody.put("n", 1);
+        requestBody.put("size", "1024x1024");
 
-        ResponseEntity<String> response = openAIClient.sendImageRequest("Bearer " + apiKey, "application/json", requestBody);
+        ResponseEntity<String> response = openAIClient.sendImageRequest(
+                "Bearer " + apiKey,
+                "application/json",
+                requestBody
+        );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new BusinessException(CommonErrorCode.STORY_IMAGE_GENERATION_FAILED);
         }
-
         String imageUrl = responseParser.extractImageUrl(response.getBody());
         return s3Utils.uploadImageFromUrl("cover/", storyId, imageUrl);
-    }
-
-    /**
-     * 동화 질문 생성 요청 전송
-     * @param language
-     * @param age
-     * @param story
-     * @return
-     */
-    public List<Map<String, String>> sendQuestionRequest(Language language, int age, String story) {
-        String template = promptsConfig.getQuestion()
-                .replace("{age}", Integer.toString(age))
-                .replace("{language}", language == Language.KO ? "korean" : "english");
-
-        Object[] messages = {
-                Map.of("role", "system", "content", template),
-                Map.of("role", "user", "content", story)
-        };
-
-        Map<String, Object> requestBody = createRequestBody("gpt-4o-mini", messages, Map.of(
-                "response_format", Map.of("type", "json_object")
-        ));
-
-        ResponseEntity<String> response = openAIClient.sendChatRequest("Bearer " + apiKey, "application/json", requestBody);
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new BusinessException(CommonErrorCode.QUESTION_GENERATION_FAILED);
-        }
-        return responseParser.extractQuestions(responseParser.extractChatGptContent(response.getBody()));
     }
 
     /**
@@ -169,50 +130,98 @@ public class ExternalApiRequest {
                 .language(story.getLanguage() == Language.EN ? "EN" : "KR")
                 .build();
 
-        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest("application/json", ttsCreationRequest);
+        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest(
+                "application/json",
+                ttsCreationRequest
+        );
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            // 생성된 TTS를 S3에 업로드
+            return s3Utils.uploadTTSToS3("tts/", storyId, response.getBody());
+        } else {
             throw new BusinessException(CommonErrorCode.TTS_GENERATION_FAILED);
         }
-
-        return s3Utils.uploadTTSToS3("tts/", storyId, response.getBody());
     }
 
     /**
      * STT 요청 전송 및 응답을 반환
      * @param file
-     * @return
      */
     public String sendSTTRequest(MultipartFile file) {
-        ResponseEntity<String> response = openAIClient.sendSTTRequest("Bearer " + apiKey, "whisper-1", file);
+        ResponseEntity<String> response = openAIClient.sendSTTRequest(
+                "Bearer " + apiKey,
+                "whisper-1",
+                file
+        );
 
-        if (!response.getStatusCode().is2xxSuccessful()) {
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return responseParser.extractSttText(response.getBody());
+        } else {
             throw new BusinessException(CommonErrorCode.STT_GENERATION_FAILED);
         }
-
-        return responseParser.extractSttText(response.getBody());
     }
 
     /**
-     * 동화 질문 TTS로 변환 후 S3 업로드 후 링크 반환
+     * 동화 질문 생성 요청 전송
+     * @param language
+     * @param age
+     * @param story
+     * @return
+     */
+    public List<Map<String, String>> sendQuestionRequest(Language language, int age, String story) {
+        String template = promptsConfig.getQuestion();
+        template = template.replace("{age}", Integer.toString(age));
+        switch (language) {
+            case KO -> template = template.replace("{language}", "korean");
+            case EN -> template = template.replace("{language}", "english");
+        }
+
+        // 동화 질문 생성 요청 전송
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "gpt-4o-mini");
+        requestBody.put("response_format", Map.of("type", "json_object"));
+        requestBody.put("messages", new Object[]{
+                Map.of("role", "system", "content", template),
+                Map.of("role", "user", "content", story)
+        });
+
+        ResponseEntity<String> response = openAIClient.sendChatRequest(
+                "Bearer " + apiKey,
+                "application/json",
+                requestBody
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new BusinessException(CommonErrorCode.QUESTION_GENERATION_FAILED);
+        }
+        return responseParser.extractQuestions(responseParser.extractChatGptContent(response.getBody()));
+    }
+
+    /**
+     * 동화 질문 TTS로 변환후 S3 업로드 후 링크 반환 - 응답이 오면 S3에서 해당 파일 삭제 필요
      * @param questionId
      * @param question
      * @param language
      * @return
      */
     public String getQuestionTTS(Long questionId, String question, Language language) {
+        // TTS 생성 요청 전송
         StoryDto.TTSCreationRequest ttsCreationRequest = StoryDto.TTSCreationRequest.builder()
                 .text(question)
                 .file_name(String.valueOf(questionId))
                 .language(language == Language.EN ? "EN" : "KR")
                 .build();
 
-        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest("application/json", ttsCreationRequest);
+        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest(
+                "application/json",
+                ttsCreationRequest
+        );
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            // 생성된 TTS를 S3에 업로드
+            return s3Utils.uploadTTSToS3("tts_question/", String.valueOf(questionId), response.getBody());
+        } else {
             throw new BusinessException(CommonErrorCode.TTS_GENERATION_FAILED);
         }
-
-        return s3Utils.uploadTTSToS3("tts_question/", String.valueOf(questionId), response.getBody());
     }
 }

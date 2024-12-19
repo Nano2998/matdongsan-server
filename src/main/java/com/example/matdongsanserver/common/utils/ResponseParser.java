@@ -90,7 +90,13 @@ public class ResponseParser {
      */
     public List<Map<String, String>> extractQuestions(String input) {
         try {
-            return objectMapper.readValue(input, new TypeReference<>() {});
+            JsonNode rootNode = objectMapper.readTree(input);
+            JsonNode questionsNode = rootNode.path("questions");
+
+            return objectMapper.convertValue(
+                    questionsNode,
+                    new TypeReference<List<Map<String, String>>>() {}
+            );
         } catch (IOException e) {
             throw new BusinessException(CommonErrorCode.JSON_PARSING_ERROR);
         }
