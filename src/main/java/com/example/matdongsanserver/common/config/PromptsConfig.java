@@ -14,7 +14,6 @@ import java.util.Map;
 public class PromptsConfig {
     private Map<Integer, String> en;
     private Map<Integer, String> ko;
-    private String translation;
     private String question;
     private String generateCommand;
     private String generateSummary;

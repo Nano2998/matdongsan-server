@@ -85,7 +85,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/swagger-resources/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
-                        .requestMatchers("/api/stories/error").permitAll()
+                        .requestMatchers("/api/health/error").permitAll()
                         .requestMatchers("/api/modules/upload").permitAll()
                         .anyRequest().authenticated()
                 );

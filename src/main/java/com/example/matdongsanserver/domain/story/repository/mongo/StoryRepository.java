@@ -2,6 +2,8 @@ package com.example.matdongsanserver.domain.story.repository.mongo;
 
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
+import com.example.matdongsanserver.domain.story.exception.StoryErrorCode;
+import com.example.matdongsanserver.domain.story.exception.StoryException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -10,6 +12,11 @@ import org.springframework.data.mongodb.repository.Query;
 import java.util.List;
 
 public interface StoryRepository extends MongoRepository<Story, String> {
+    default Story findByIdOrThrow(String storyId) {
+        return findById(storyId).orElseThrow(
+                () -> new StoryException(StoryErrorCode.STORY_NOT_FOUND)
+        );
+    }
     long countByMemberId(Long memberId);
     Page<Story> findByIsPublicTrueAndMemberIdOrderByCreatedAtDesc(Long memberId, Pageable pageable);
     Page<Story> findByIsPublicTrueAndMemberIdOrderByLikesDesc(Long memberId, Pageable pageable);

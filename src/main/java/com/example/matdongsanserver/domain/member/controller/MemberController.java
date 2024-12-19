@@ -1,7 +1,6 @@
 package com.example.matdongsanserver.domain.member.controller;
 
-
-import com.example.matdongsanserver.domain.auth.util.SecurityUtils;
+import com.example.matdongsanserver.common.utils.SecurityUtils;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,8 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @Tag(name = "Member API", description = "회원 API")
 @RestController
@@ -47,70 +44,5 @@ public class MemberController {
     ) {
         return ResponseEntity.ok()
                 .body(memberService.getMemberDetail(memberId));
-    }
-
-    @Operation(summary = "자녀 추가")
-    @PostMapping("/children")
-    public ResponseEntity<List<MemberDto.ChildDetail>> registerChild(
-            @RequestBody MemberDto.ChildRequest childRequest
-    ) {
-        return ResponseEntity.ok()
-                .body(memberService.registerChild(SecurityUtils.getLoggedInMemberId(), childRequest));
-    }
-
-    @Operation(summary = "자녀 조회")
-    @GetMapping("/children")
-    public ResponseEntity<List<MemberDto.ChildDetail>> getChildDetails(
-    ) {
-        return ResponseEntity.ok()
-                .body(memberService.getChildDetails(SecurityUtils.getLoggedInMemberId()));
-    }
-
-    @Operation(summary = "자녀 삭제")
-    @DeleteMapping("/children/{childId}")
-    public ResponseEntity<Void> deleteChild(
-            @PathVariable Long childId
-    ) {
-        memberService.deleteChild(SecurityUtils.getLoggedInMemberId(), childId);
-        return ResponseEntity.noContent()
-                .build();
-    }
-
-    @Operation(summary = "자녀 정보 수정")
-    @PatchMapping("/children/{childId}")
-    public ResponseEntity<List<MemberDto.ChildDetail>> updateChild(
-            @PathVariable Long childId,
-            @RequestBody MemberDto.ChildRequest childRequest
-    ) {
-        return ResponseEntity.ok()
-                .body(memberService.updateChild(SecurityUtils.getLoggedInMemberId(), childId, childRequest));
-    }
-
-    @Operation(summary = "팔로우")
-    @PostMapping("/follow/{followerId}")
-    public ResponseEntity<Void> follow(
-            @PathVariable Long followerId
-    ) {
-        memberService.follow(SecurityUtils.getLoggedInMemberId(), followerId);
-        return ResponseEntity.noContent()
-                .build();
-    }
-
-    @Operation(summary = "언팔로우")
-    @DeleteMapping("/follow/{followerId}")
-    public ResponseEntity<Void> unfollow(
-            @PathVariable Long followerId
-    ) {
-        memberService.unfollow(SecurityUtils.getLoggedInMemberId(), followerId);
-        return ResponseEntity.noContent()
-                .build();
-    }
-
-    @Operation(summary = "팔로우 리스트 조회")
-    @GetMapping("/follow")
-    public ResponseEntity<List<MemberDto.MemberSummary>> getFollowers(
-    ) {
-        return ResponseEntity.ok()
-                .body(memberService.getFollowers(SecurityUtils.getLoggedInMemberId()));
     }
 }

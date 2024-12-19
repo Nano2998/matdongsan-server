@@ -1,6 +1,8 @@
 package com.example.matdongsanserver.domain.member.entity;
 
 import com.example.matdongsanserver.common.model.BaseTimeEntity;
+import com.example.matdongsanserver.domain.child.entity.Child;
+import com.example.matdongsanserver.domain.follow.entity.Follow;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.util.StringUtils;

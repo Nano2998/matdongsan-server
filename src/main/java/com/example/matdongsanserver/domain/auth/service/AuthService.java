@@ -58,13 +58,10 @@ public class AuthService {
 
     /**
      * 인증 서버로부터 인증 코드를 통해 access 토큰을 받아오는 로직
-     *
      * @param code
      * @return
-     * @throws JsonProcessingException
      */
-    public String getToken(final String code) throws JsonProcessingException {
-        log.info("Attempting to retrieve Kakao access token for code: {}", code);
+    public String getToken(final String code) {
 
         Map<String, String> requestParams = new HashMap<>();
         requestParams.put("grant_type", "authorization_code");
@@ -76,35 +73,28 @@ public class AuthService {
         try {
             ResponseEntity<String> response = kakaoAuthClient.getAccessToken(requestParams);
 
-            log.info("Successfully retrieved Kakao access token.");
             return parseJsonNode(response.getBody()).get("access_token").asText();
         } catch (FeignException e) {
-            log.error("Failed to retrieve Kakao access token: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
     }
 
     /**
      * 카카오 로그인을 처리하는 로직
-     *
      * @param loginRequest
      * @return
-     * @throws JsonProcessingException
      */
     @Transactional
-    public LoginResponse kakaoLogin(LoginRequest loginRequest) throws JsonProcessingException {
-        log.info("Processing Kakao login for token.");
+    public LoginResponse kakaoLogin(LoginRequest loginRequest) {
         KakaoInfo kakaoInfo = getKakaoUserEmail(loginRequest.getToken());
         validateLoginRequest(kakaoInfo.getEmail(), loginRequest.getEmail());
 
-        Member member = findOrCreateMember(kakaoInfo);
-        log.info("Member retrieved or created. memberId={}, email={}", member.getId(), member.getEmail());
+        Member member = getOrRegisterMember(kakaoInfo);
 
         TokenResponse tokenResponse = tokenProvider.createToken(
                 member.getId(), member.getEmail(), member.getRole().name());
 
         saveRefreshToken(member, tokenResponse.getRefreshToken());
-        log.info("Token created for memberId: {}", member.getId());
 
         return LoginResponse.builder()
                 .accessToken(tokenResponse.getAccessToken())
@@ -115,26 +105,22 @@ public class AuthService {
 
     /**
      * 리프레시 토큰을 통해 새로운 엑세스, 리프레시 토큰을 발급
-     *
      * @param request
      * @return
      */
     @Transactional
     public TokenResponse reissueAccessToken(final HttpServletRequest request) {
-        log.info("Reissuing access and refresh tokens.");
         String refreshToken = getTokenFromHeader(request, REFRESH_HEADER);
 
         validateRefreshToken(refreshToken);
 
         RefreshToken findToken = refreshTokenRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> {
-                    log.warn("Refresh token has expired.");
-                    return new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
-                });
+                .orElseThrow(
+                        () ->  new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED)
+                );
 
         TokenResponse tokenResponse = tokenProvider.createToken(
                 findToken.getId(), findToken.getEmail(), findToken.getAuthority());
-        log.info("New tokens created for memberId: {}", findToken.getId());
 
         updateRefreshToken(findToken, tokenResponse.getRefreshToken());
 
@@ -146,17 +132,13 @@ public class AuthService {
 
     /**
      * 카카오 서버에서 사용자 이메일 정보를 가져옴
-     *
      * @param token
      * @return
-     * @throws JsonProcessingException
      */
-    private KakaoInfo getKakaoUserEmail(final String token) throws JsonProcessingException {
+    private KakaoInfo getKakaoUserEmail(final String token) {
         log.info("Retrieving Kakao user email.");
         try {
             ResponseEntity<String> response = kakaoUserInfoClient.getUserInfo("Bearer " + token);
-
-            log.info("Successfully retrieved Kakao user email.");
 
             return KakaoInfo.builder()
                     .email(parseJsonNode(response.getBody()).get("kakao_account").get("email").asText())
@@ -164,30 +146,25 @@ public class AuthService {
                     .profileImage(parseJsonNode(response.getBody()).get("kakao_account").get("profile").get("profile_image_url").asText())
                     .build();
         } catch (FeignException e) {
-            log.error("Failed to retrieve Kakao user email: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.AUTH_SERVER_ERROR);
         }
     }
 
     /**
      * 리프레시 토큰 검증
-     *
      * @param refreshToken
      */
     private void validateRefreshToken(String refreshToken) {
         if (!StringUtils.hasText(refreshToken) || !tokenProvider.validateToken(refreshToken)) {
-            log.warn("Invalid or empty refresh token.");
             throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
         if (!tokenProvider.validateTokenExpired(refreshToken)) {
-            log.warn("Refresh token has expired.");
             throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
     }
 
     /**
      * 헤더에서 토큰 추출
-     *
      * @param request
      * @param headerName
      * @return
@@ -195,7 +172,6 @@ public class AuthService {
     private String getTokenFromHeader(final HttpServletRequest request, final String headerName) {
         String token = request.getHeader(headerName);
         if (!StringUtils.hasText(token)) {
-            log.warn("No token found in header: {}", headerName);
             throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
         return token;
@@ -203,24 +179,21 @@ public class AuthService {
 
     /**
      * 요청에 대한 이메일 검증
-     *
      * @param actualEmail
      * @param expectedEmail
      */
     private void validateLoginRequest(String actualEmail, String expectedEmail) {
         if (!Objects.equals(actualEmail, expectedEmail)) {
-            log.warn("Email mismatch during login request. expected={}, actual={}", expectedEmail, actualEmail);
             throw new AuthException(AuthErrorCode.INVALID_LOGIN_REQUEST);
         }
     }
 
     /**
      * 회원을 찾거나 생성
-     *
      * @param kakaoInfo
      * @return
      */
-    private Member findOrCreateMember(KakaoInfo kakaoInfo) {
+    private Member getOrRegisterMember(KakaoInfo kakaoInfo) {
         return memberRepository.findByEmail(kakaoInfo.getEmail())
                 .orElseGet(() -> memberRepository.save(
                         Member.builder()
@@ -233,7 +206,6 @@ public class AuthService {
 
     /**
      * RefreshToken 엔티티 저장
-     *
      * @param member
      * @param refreshToken
      */
@@ -251,7 +223,6 @@ public class AuthService {
 
     /**
      * RefreshToken 엔티티 업데이트
-     *
      * @param findToken
      * @param newRefreshToken
      */
@@ -269,12 +240,14 @@ public class AuthService {
 
     /**
      * JSON 응답 파싱
-     *
      * @param json
      * @return
-     * @throws JsonProcessingException
      */
-    private JsonNode parseJsonNode(String json) throws JsonProcessingException {
-        return new ObjectMapper().readTree(json);
+    private JsonNode parseJsonNode(String json) {
+        try {
+            return new ObjectMapper().readTree(json);
+        } catch (JsonProcessingException e) {
+            throw new AuthException(AuthErrorCode.JSON_PARSING_ERROR);
+        }
     }
 }

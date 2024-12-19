@@ -1,6 +1,5 @@
 package com.example.matdongsanserver.domain.story.entity.mongo;
 
-import com.example.matdongsanserver.domain.story.LangType;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -11,7 +10,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,10 +35,6 @@ public class Story {
     private String content; //내용
 
     private String author;
-
-    private String translationTitle; //영어 동화일 경우 번역본
-
-    private String translationContent; //영어 동화일 경우 번역본
 
     private String coverUrl; //표지 이미지
 
@@ -70,8 +64,6 @@ public class Story {
         this.coverUrl = coverUrl;
         this.isPublic = true;
         this.tags = new ArrayList<>();
-        this.translationTitle = "";
-        this.translationContent = "";
         this.ttsUrl = "";
         this.likes = 0L;
         this.memberId = memberId;
@@ -83,11 +75,6 @@ public class Story {
         this.isPublic = storyUpdateRequest.getIsPublic();
         this.tags = storyUpdateRequest.getTags();
         return this;
-    }
-
-    public void updateTranslation(String translationTitle, String translationContent) {
-        this.translationTitle = translationTitle;
-        this.translationContent = translationContent;
     }
 
     public Story updateTTSUrl(String ttsUrl) {
@@ -105,7 +92,7 @@ public class Story {
         return this;
     }
 
-    public void updateCoverurl(String coverUrl) {
+    public void updateCoverUrl(String coverUrl) {
         this.coverUrl = coverUrl;
     }
 }

@@ -22,5 +22,9 @@ public class HealthController {
                 .body("healthy");
     }
 
-
+    @Operation(summary = "에러 테스트용")
+    @GetMapping("/error")
+    public void error() {
+        throw new RuntimeException("테스트 에러 발생");
+    }
 }
