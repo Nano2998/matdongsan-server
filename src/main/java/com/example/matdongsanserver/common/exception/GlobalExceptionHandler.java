@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-/**
+
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
         log.warn("[맛동산]: 예외 발생, 예외내용 = {}, 예외 코드 = {}", e.getErrorCode().getMessage(), e.getErrorCode());
@@ -25,5 +25,4 @@ public class GlobalExceptionHandler {
                         .message(e.getMessage())
                         .build());
     }
- */
 }
