@@ -15,6 +15,7 @@ public class GlobalExceptionHandler {
         return ErrorResponse.toResponseEntity(e.getErrorCode());
     }
 
+/**
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ErrorResponse> handleGenericException(Exception e) {
         log.error("[맛동산]: 예상치 못한 예외 발생, 예외내용 = {}", e.getMessage());
@@ -25,4 +26,5 @@ public class GlobalExceptionHandler {
                         .message(e.getMessage())
                         .build());
     }
+ */
 }
