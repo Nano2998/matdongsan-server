@@ -19,7 +19,7 @@ public class HealthController {
     public ResponseEntity<String> healthCheck() {
         log.info("로그 체크");
         return ResponseEntity.ok()
-                .body("healthy");
+                .body("healthy-good");
     }
 
     @Operation(summary = "에러 테스트용")
