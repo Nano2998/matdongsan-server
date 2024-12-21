@@ -79,6 +79,7 @@ public class StoryDto {
         private List<String> tags;
         private LocalDateTime createdAt;
         private Boolean isLiked;
+        private Long authorId;
 
         @Builder
         public StoryDetail(Story story, Boolean isLiked) {
@@ -89,6 +90,7 @@ public class StoryDto {
             this.tags = story.getTags();
             this.createdAt = story.getCreatedAt();
             this.isLiked = isLiked;
+            this.authorId = story.getMemberId();
         }
     }
 
