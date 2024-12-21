@@ -25,6 +25,10 @@ public class MemberService {
 
     /**
      * 회원가입 이후 닉네임 및 프로필 이미지 등록 로직
+     * @param memberId
+     * @param nickname
+     * @param profileImage
+     * @return
      */
     @Transactional
     public MemberDto.MemberDetail updateMember(Long memberId, String nickname, MultipartFile profileImage) {
@@ -39,16 +43,20 @@ public class MemberService {
         return MemberDto.MemberDetail.builder()
                 .member(member)
                 .storyCount(storyRepository.countByMemberId(memberId))
+                .likeCount(storyRepository.sumLikesByMemberId(memberId))
                 .build();
     }
 
     /**
      * 맴버 조회
+     * @param memberId
+     * @return
      */
     public MemberDto.MemberDetail getMemberDetail(Long memberId) {
         return MemberDto.MemberDetail.builder()
                 .member(memberRepository.findByIdOrThrow(memberId))
                 .storyCount(storyRepository.countByMemberId(memberId))
+                .likeCount(storyRepository.sumLikesByMemberId(memberId))
                 .build();
     }
 }
