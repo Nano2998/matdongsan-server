@@ -100,12 +100,27 @@ public class StoryDto {
         private String file_name;
         private String language;
         private String text;
+        private String folder;
 
         @Builder
-        public TTSCreationRequest(String file_name, String language, String text) {
+        public TTSCreationRequest(String file_name, String language, String text, String folder) {
             this.file_name = file_name;
             this.language = language;
             this.text = text;
+            this.folder = folder;
+        }
+    }
+
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class TTSResponse {
+        private String ttsUrl;
+        private List<Double> timestamps;
+
+        @Builder
+        public TTSResponse(String ttsUrl, List<Double> timestamps) {
+            this.ttsUrl = ttsUrl;
+            this.timestamps = timestamps;
         }
     }
 }

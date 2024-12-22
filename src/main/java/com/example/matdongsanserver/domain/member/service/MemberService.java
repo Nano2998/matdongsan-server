@@ -1,6 +1,7 @@
 package com.example.matdongsanserver.domain.member.service;
 
 import com.example.matdongsanserver.common.utils.S3Utils;
+import com.example.matdongsanserver.domain.follow.repository.FollowRepository;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -22,6 +23,7 @@ public class MemberService {
     private final S3Utils s3Utils;
     private final MemberRepository memberRepository;
     private final StoryRepository storyRepository;
+    private final FollowRepository followRepository;
 
     /**
      * 회원가입 이후 닉네임 및 프로필 이미지 등록 로직
@@ -48,7 +50,7 @@ public class MemberService {
     }
 
     /**
-     * 맴버 조회
+     * 내 정보 조회
      * @param memberId
      * @return
      */
@@ -57,6 +59,21 @@ public class MemberService {
                 .member(memberRepository.findByIdOrThrow(memberId))
                 .storyCount(storyRepository.countByMemberId(memberId))
                 .likeCount(storyRepository.sumLikesByMemberId(memberId))
+                .build();
+    }
+
+    /**
+     * 다른 작가의 정보 조회
+     * @param memberId
+     * @param authorId
+     * @return
+     */
+    public MemberDto.MemberDetailOther getOtherMemberDetail(Long memberId, Long authorId) {
+        return MemberDto.MemberDetailOther.builder()
+                .member(memberRepository.findByIdOrThrow(memberId))
+                .storyCount(storyRepository.countByMemberId(memberId))
+                .likeCount(storyRepository.sumLikesByMemberId(memberId))
+                .isFollowed(followRepository.existsByFollowingIdAndFollowerId(memberId, authorId))
                 .build();
     }
 }

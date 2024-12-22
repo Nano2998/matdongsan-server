@@ -47,7 +47,7 @@ public class StoryController {
 
     @Operation(summary = "동화 TTS")
     @GetMapping("/tts/{storyId}")
-    public ResponseEntity<String> getStoryTTS(
+    public ResponseEntity<StoryDto.TTSResponse> getStoryTTS(
             @PathVariable String storyId
     ) {
         return ResponseEntity.ok()

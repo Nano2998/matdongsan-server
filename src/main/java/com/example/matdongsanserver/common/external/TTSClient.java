@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import java.util.Map;
+
 @FeignClient(name = "TTSClient", url = "${tts.url}")
 public interface TTSClient {
 
@@ -17,7 +19,7 @@ public interface TTSClient {
      * @return
      */
     @PostMapping(value = "/generate-tts", consumes = "application/json", produces = "application/json")
-    ResponseEntity<byte[]> sendTTSRequest(
+    ResponseEntity<StoryDto.TTSResponse> sendTTSRequest(
             @RequestHeader("Content-Type") String contentType,
             @RequestBody StoryDto.TTSCreationRequest ttsCreationRequest
     );
