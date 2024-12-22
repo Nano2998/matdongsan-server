@@ -48,6 +48,8 @@ public class Story {
 
     private Long memberId;  //생성한 멤버 아이디
 
+    private List<Double> timestamps; // 해시태그 리스트
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -68,6 +70,7 @@ public class Story {
         this.likes = 0L;
         this.memberId = memberId;
         this.author = author;
+        this.timestamps = new ArrayList<>();
     }
 
     public Story updateStoryDetail(StoryDto.StoryUpdateRequest storyUpdateRequest) {
@@ -77,8 +80,9 @@ public class Story {
         return this;
     }
 
-    public Story updateTTSUrl(String ttsUrl) {
+    public Story updateTTSUrl(String ttsUrl, List<Double> timestamps) {
         this.ttsUrl = ttsUrl;
+        this.timestamps = timestamps;
         return this;
     }
 

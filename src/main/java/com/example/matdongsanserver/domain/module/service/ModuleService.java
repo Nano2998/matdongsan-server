@@ -72,7 +72,7 @@ public class ModuleService {
      */
     @Transactional
     public void sendStory(String storyId) {
-        String storyTTS = storyService.getOrRegisterStoryTTS(storyId);
+        String storyTTS = storyService.getOrRegisterStoryTTS(storyId).getTtsUrl();
         sendMqttMessage("only-play", storyTTS);
     }
 
@@ -89,7 +89,9 @@ public class ModuleService {
         storyQuestion.updateChild(childRepository.findByIdOrThrow(childId));
 
         storyQuestion.getQuestionAnswers().forEach(
-                qna -> sendMqttMessage("play-and-record", externalApiRequest.getQuestionTTS(qna.getId(), qna.getQuestion(), storyQuestion.getLanguage()))
+                qna -> sendMqttMessage("play-and-record", externalApiRequest.sendTTSRequest(
+                        String.valueOf(qna.getId()), qna.getQuestion(), storyQuestion.getLanguage(), "tts_question"
+                ).getTtsUrl())
         );
     }
 

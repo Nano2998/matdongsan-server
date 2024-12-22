@@ -119,25 +119,26 @@ public class ExternalApiRequest {
 
     /**
      * TTS 요청 전송 및 응답을 반환
-     * @param storyId
-     * @param story
+     * @param fileName
+     * @param text
+     * @param language
      * @return
      */
-    public String sendTTSRequest(String storyId, Story story) {
+    public StoryDto.TTSResponse sendTTSRequest(String fileName, String text, Language language, String folder) {
         StoryDto.TTSCreationRequest ttsCreationRequest = StoryDto.TTSCreationRequest.builder()
-                .file_name(storyId)
-                .text(story.getContent())
-                .language(story.getLanguage() == Language.EN ? "EN" : "KR")
+                .file_name(fileName)
+                .text(text)
+                .language(language == Language.EN ? "EN" : "KR")
+                .folder(folder)
                 .build();
 
-        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest(
+        ResponseEntity<StoryDto.TTSResponse> response = ttsClient.sendTTSRequest(
                 "application/json",
                 ttsCreationRequest
         );
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            // 생성된 TTS를 S3에 업로드
-            return s3Utils.uploadTTSToS3("tts/", storyId, response.getBody());
+            return response.getBody();
         } else {
             throw new BusinessException(CommonErrorCode.TTS_GENERATION_FAILED);
         }
@@ -195,33 +196,5 @@ public class ExternalApiRequest {
             throw new BusinessException(CommonErrorCode.QUESTION_GENERATION_FAILED);
         }
         return responseParser.extractQuestions(responseParser.extractChatGptContent(response.getBody()));
-    }
-
-    /**
-     * 동화 질문 TTS로 변환후 S3 업로드 후 링크 반환 - 응답이 오면 S3에서 해당 파일 삭제 필요
-     * @param questionId
-     * @param question
-     * @param language
-     * @return
-     */
-    public String getQuestionTTS(Long questionId, String question, Language language) {
-        // TTS 생성 요청 전송
-        StoryDto.TTSCreationRequest ttsCreationRequest = StoryDto.TTSCreationRequest.builder()
-                .text(question)
-                .file_name(String.valueOf(questionId))
-                .language(language == Language.EN ? "EN" : "KR")
-                .build();
-
-        ResponseEntity<byte[]> response = ttsClient.sendTTSRequest(
-                "application/json",
-                ttsCreationRequest
-        );
-
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            // 생성된 TTS를 S3에 업로드
-            return s3Utils.uploadTTSToS3("tts_question/", String.valueOf(questionId), response.getBody());
-        } else {
-            throw new BusinessException(CommonErrorCode.TTS_GENERATION_FAILED);
-        }
     }
 }

@@ -178,16 +178,21 @@ public class StoryService {
      * @return
      */
     @Transactional
-    public String getOrRegisterStoryTTS(String storyId) {
+    public StoryDto.TTSResponse getOrRegisterStoryTTS(String storyId) {
         Story story = storyRepository.findByIdOrThrow(storyId);
 
         // 이미 해당 동화의 TTS가 저장되어 있다면 반환
         if (!story.getTtsUrl().isBlank()){
-            return story.getTtsUrl();
+            return StoryDto.TTSResponse.builder()
+                    .ttsUrl(story.getTtsUrl())
+                    .timestamps(story.getTimestamps())
+                    .build();
         }
 
-        String ttsUrl = externalApiRequest.sendTTSRequest(storyId, story);
-        storyRepository.save(story.updateTTSUrl(ttsUrl));
-        return ttsUrl;
+        StoryDto.TTSResponse ttsResponse = externalApiRequest.sendTTSRequest(
+                storyId, story.getContent(), story.getLanguage(), "tts"
+        );
+        storyRepository.save(story.updateTTSUrl(ttsResponse.getTtsUrl(), ttsResponse.getTimestamps()));
+        return ttsResponse;
     }
 }
