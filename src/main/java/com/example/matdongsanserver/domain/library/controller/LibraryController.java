@@ -27,36 +27,36 @@ public class LibraryController {
     @Operation(summary = "조건별 동화 리스트 조회")
     @GetMapping
     public ResponseEntity<Page<StoryDto.StorySummary>> getStories(
-            @RequestParam(defaultValue = "recent") String sort,
+            @RequestParam(defaultValue = "recent") String sortBy,
             @RequestParam(defaultValue = "all") String language,
             @RequestParam(defaultValue = "main") String age,
             Pageable pageable
     ) {
         return ResponseEntity.ok(libraryService.getStories(
-                AgeType.fromString(age),LangType.fromString(language), SortType.fromString(sort), pageable
+                AgeType.fromString(age),LangType.fromString(language), SortType.fromString(sortBy), pageable
         ));
     }
 
     @Operation(summary = "특정 작가의 동화 리스트 조회")
     @GetMapping("/{authorId}")
     public ResponseEntity<Page<StoryDto.StorySummary>> getStoriesByWriter(
-            @RequestParam(defaultValue = "recent") String sort,
+            @RequestParam(defaultValue = "recent") String sortBy,
             @PathVariable Long authorId,
             Pageable pageable
     ) {
         return ResponseEntity.ok(libraryService.getStoriesByAuthorId(
-                authorId, SortType.fromString(sort), pageable
+                authorId, SortType.fromString(sortBy), pageable
         ));
     }
 
     @Operation(summary = "내 동화 리스트 조회")
     @GetMapping("/my")
     public ResponseEntity<Page<StoryDto.StorySummary>> getMyStories(
-            @RequestParam(defaultValue = "recent") String sort,
+            @RequestParam(defaultValue = "recent") String sortBy,
             Pageable pageable
     ) {
         return ResponseEntity.ok(libraryService.getMyStories(
-                SecurityUtils.getLoggedInMemberId(), SortType.fromString(sort), pageable
+                SecurityUtils.getLoggedInMemberId(), SortType.fromString(sortBy), pageable
         ));
     }
 
