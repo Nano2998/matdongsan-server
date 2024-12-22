@@ -64,9 +64,7 @@ public class FollowService {
         List<MemberDto.MemberSummary> followers = new ArrayList<>();
         followRepository.findByFollowingId(memberId).forEach(
                 following -> {
-                    followers.add(MemberDto.MemberSummary.builder()
-                            .member(following.getFollower())
-                            .build());
+                    followers.add(new MemberDto.MemberSummary(following.getFollower()));
                 }
         );
         return followers;

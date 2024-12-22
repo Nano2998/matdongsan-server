@@ -39,10 +39,10 @@ public class MemberController {
 
     @Operation(summary = "다른 작가의 정보 조회")
     @GetMapping("/{memberId}")
-    public ResponseEntity<MemberDto.MemberDetail> getOtherMemberDetail(
+    public ResponseEntity<MemberDto.MemberDetailOther> getOtherMemberDetail(
             @PathVariable Long memberId
     ) {
         return ResponseEntity.ok()
-                .body(memberService.getMemberDetail(memberId));
+                .body(memberService.getOtherMemberDetail(SecurityUtils.getLoggedInMemberId(), memberId));
     }
 }
