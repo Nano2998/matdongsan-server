@@ -23,7 +23,7 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         String method = request.getMethod();
         String user = (request.getUserPrincipal() != null) ? request.getUserPrincipal().getName() : "Anonymous";
 
-        log.warn("Access denied for user: {}, method: {}, URI: {}", user, method, requestURI);
+        log.warn("[맛동산]: 예외 발생, 예외내용 = Access denied for user: {}, method: {}, URI: {}", user, method, requestURI);
 
         response.setContentType("application/json; charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

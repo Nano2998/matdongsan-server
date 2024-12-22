@@ -113,6 +113,6 @@ public class JwtFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         String clientIP = request.getRemoteAddr();
 
-        log.warn("{} Method: {}, URI: {}, Client IP: {}", message, method, requestURI, clientIP);
+        log.warn("[맛동산]: 예외 발생, 예외내용 = {} Method: {}, URI: {}, Client IP: {}", message, method, requestURI, clientIP);
     }
 }

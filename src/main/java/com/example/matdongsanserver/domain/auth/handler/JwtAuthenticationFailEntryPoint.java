@@ -23,7 +23,7 @@ public class JwtAuthenticationFailEntryPoint implements AuthenticationEntryPoint
         String method = request.getMethod();
         String clientIP = request.getRemoteAddr();
 
-        log.warn("Authentication failed. Method: {}, URI: {}, Client IP: {}", method, requestURI, clientIP);
+        log.warn("[맛동산]: 예외 발생, 예외내용 = Authentication failed. Method: {}, URI: {}, Client IP: {}", method, requestURI, clientIP);
 
         response.setContentType("application/json; charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
