@@ -80,9 +80,11 @@ public class StoryDto {
         private LocalDateTime createdAt;
         private Boolean isLiked;
         private Long authorId;
+        private Boolean isFollowed;
+        private Boolean isMyStory;
 
         @Builder
-        public StoryDetail(Story story, Boolean isLiked) {
+        public StoryDetail(Story story, Boolean isLiked, Boolean isFollowed, Boolean isMyStory) {
             super(story);
             this.content = story.getContent();
             this.age = story.getAge();
@@ -91,6 +93,8 @@ public class StoryDto {
             this.createdAt = story.getCreatedAt();
             this.isLiked = isLiked;
             this.authorId = story.getMemberId();
+            this.isFollowed = isFollowed;
+            this.isMyStory = isMyStory;
         }
     }
 

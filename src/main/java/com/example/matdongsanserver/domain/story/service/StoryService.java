@@ -1,6 +1,7 @@
 package com.example.matdongsanserver.domain.story.service;
 
 import com.example.matdongsanserver.common.config.PromptsConfig;
+import com.example.matdongsanserver.domain.follow.repository.FollowRepository;
 import com.example.matdongsanserver.domain.library.service.LibraryService;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
@@ -32,6 +33,7 @@ public class StoryService {
     private final LibraryService libraryService;
     private final ExternalApiRequest externalApiRequest;
     private final StoryCacheService storyCacheService;
+    private final FollowRepository followRepository;
 
     /**
      * 동화 생성
@@ -110,6 +112,8 @@ public class StoryService {
         return StoryDto.StoryDetail.builder()
                 .story(story)
                 .isLiked(storyLikeRepository.existsByStoryIdAndMemberId(storyId, memberId))
+                .isFollowed(followRepository.existsByFollowingIdAndFollowerId(memberId, story.getMemberId()))
+                .isMyStory(memberId.equals(story.getMemberId()))
                 .build();
     }
 
@@ -131,6 +135,8 @@ public class StoryService {
         return StoryDto.StoryDetail.builder()
                 .story(storyRepository.save(story))
                 .isLiked(storyLikeRepository.existsByStoryIdAndMemberId(storyId, memberId))
+                .isFollowed(false)
+                .isMyStory(true)
                 .build();
     }
 
