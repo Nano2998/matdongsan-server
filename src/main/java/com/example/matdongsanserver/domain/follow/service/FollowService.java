@@ -30,6 +30,9 @@ public class FollowService {
      */
     @Transactional
     public void follow(Long memberId, Long followerId) {
+        if (memberId.equals(followerId)) {
+            throw new FollowException(FollowErrorCode.CANNOT_FOLLOW_MYSELF);
+        }
         if (followRepository.findByFollowingIdAndFollowerId(memberId, followerId).isPresent()) {
             throw new FollowException(FollowErrorCode.FOLLOW_ALREADY_EXISTS);
         }
