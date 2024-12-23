@@ -31,6 +31,7 @@ public class StoryService {
     private final StoryLikeRepository storyLikeRepository;
     private final LibraryService libraryService;
     private final ExternalApiRequest externalApiRequest;
+    private final StoryCacheService storyCacheService;
 
     /**
      * 동화 생성
@@ -95,6 +96,24 @@ public class StoryService {
     }
 
     /**
+     * 동화 상세 조회
+     * @param storyId
+     * @param memberId
+     * @return
+     */
+    public StoryDto.StoryDetail getStoryDetail(String storyId, Long memberId) {
+        Story story = storyCacheService.getStory(storyId);
+
+        // 조회하는 동화를 최근 동화에 포함
+        libraryService.addRecentStories(memberId, storyId);
+
+        return StoryDto.StoryDetail.builder()
+                .story(story)
+                .isLiked(storyLikeRepository.existsByStoryIdAndMemberId(storyId, memberId))
+                .build();
+    }
+
+    /**
      * 동화 상세 수정
      * @param memberId
      * @param storyId
@@ -103,8 +122,7 @@ public class StoryService {
      */
     @Transactional
     public StoryDto.StoryDetail updateStoryDetail(Long memberId, String storyId, StoryDto.StoryUpdateRequest requestDto) {
-        Story story = storyRepository.findByIdOrThrow(storyId)
-                .updateStoryDetail(requestDto);
+        Story story = storyCacheService.updateStory(storyId, requestDto);
 
         if (!story.getMemberId().equals(memberId)) {
             throw new StoryException(StoryErrorCode.STORY_EDIT_PERMISSION_DENIED);  // 동화의 주인만 동화 상세 수정 가능
@@ -117,31 +135,13 @@ public class StoryService {
     }
 
     /**
-     * 동화 상세 조회
-     * @param storyId
-     * @param memberId
-     * @return
-     */
-    public StoryDto.StoryDetail getStoryDetail(String storyId, Long memberId) {
-        Story story = storyRepository.findByIdOrThrow(storyId);
-
-        // 조회하는 동화를 최근 동화에 포함
-        libraryService.addRecentStories(memberId, storyId);
-
-        return StoryDto.StoryDetail.builder()
-                .story(story)
-                .isLiked(storyLikeRepository.existsByStoryIdAndMemberId(storyId, memberId))
-                .build();
-    }
-
-    /**
      * 동화 좋아요
      * @param storyId
      * @param memberId
      */
     @Transactional
     public void likeStory(String storyId, Long memberId) {
-        Story story = storyRepository.findByIdOrThrow(storyId);
+        Story story = storyCacheService.likeStory(storyId);
 
         if (storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId).isPresent()) {
             throw new StoryException(StoryErrorCode.LIKE_ALREADY_EXISTS);   // 이미 좋아요를 누른 경우
@@ -152,7 +152,7 @@ public class StoryService {
                 .member(memberRepository.findByIdOrThrow(memberId))
                 .build());
 
-        storyRepository.save(story.addLikes());
+        storyRepository.save(story);
     }
 
     /**
@@ -162,14 +162,14 @@ public class StoryService {
      */
     @Transactional
     public void unlikeStory(String storyId, Long memberId) {
-        Story story = storyRepository.findByIdOrThrow(storyId);
+        Story story = storyCacheService.unlikeStory(storyId);
 
         storyLikeRepository.delete(storyLikeRepository.findByStoryIdAndMemberId(storyId, memberId)
                 .orElseThrow(
                         () -> new StoryException(StoryErrorCode.LIKE_NOT_EXISTS)    //좋아요를 누르지 않고 취소 시도
                 ));
 
-        storyRepository.save(story.removeLikes());
+        storyRepository.save(story);
     }
 
     /**
@@ -195,6 +195,4 @@ public class StoryService {
         storyRepository.save(story.updateTTSUrl(ttsResponse.getTtsUrl(), ttsResponse.getTimestamps()));
         return ttsResponse;
     }
-
-
 }
