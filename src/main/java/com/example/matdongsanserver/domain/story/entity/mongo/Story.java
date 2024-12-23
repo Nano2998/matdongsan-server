@@ -1,6 +1,10 @@
 package com.example.matdongsanserver.domain.story.entity.mongo;
 
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -50,10 +54,17 @@ public class Story {
 
     private List<Double> timestamps; // 해시태그 리스트
 
+    /**
+     * Redis 캐시를 위한 직렬화, 역직렬화 어노테이션 추가
+     */
     @CreatedDate
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime updatedAt;
 
     @Builder
