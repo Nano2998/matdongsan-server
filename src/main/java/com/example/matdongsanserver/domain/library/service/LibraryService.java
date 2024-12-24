@@ -11,6 +11,7 @@ import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepositor
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -126,12 +127,19 @@ public class LibraryService {
      * @param memberId
      * @return
      */
-    public List<StoryDto.StorySummary> getRecentStories(Long memberId) {
-        List<String> recentStoryIds = getRecentStoryIds(memberId);
-        return storyRepository.findByIdIn(recentStoryIds)
+    public Page<StoryDto.StorySummary> getRecentStories(Long memberId, Pageable pageable) {
+        List<String> recentStoryIds = getRecentStoryIds(memberId, pageable);
+        if (recentStoryIds == null || recentStoryIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<StoryDto.StorySummary> storySummaries = storyRepository.findByIdIn(recentStoryIds)
                 .stream()
                 .map(StoryDto.StorySummary::new)
                 .toList();
+
+        Long total = getRecentStoriesSize(memberId);
+        return new PageImpl<>(storySummaries, pageable, total != null ? total : 0);
     }
 
     /**
@@ -139,9 +147,23 @@ public class LibraryService {
      * @param memberId
      * @return
      */
-    private List<String> getRecentStoryIds(Long memberId) {
+    private List<String> getRecentStoryIds(Long memberId, Pageable pageable) {
         String redisKey = "user:" + memberId + ":recentTales";
-        return redisTemplate.opsForList().range(redisKey, 0, -1);
+
+        // 정해진 범위의 아이디만 반환
+        long start = pageable.getOffset();
+        long end = start + pageable.getPageSize() - 1;
+        return redisTemplate.opsForList().range(redisKey, start, end);
+    }
+
+    /**
+     * 최근 본 동화 리스트의 길이 반환
+     * @param memberId
+     * @return
+     */
+    private Long getRecentStoriesSize(Long memberId) {
+        String redisKey = "user:" + memberId + ":recentTales";
+        return redisTemplate.opsForList().size(redisKey);
     }
 
     /**

@@ -167,10 +167,10 @@ class LibraryServiceTest {
 
         // When
         libraryService.addRecentStories(member.getId(), storyId);
-        List<StoryDto.StorySummary> recentStories = libraryService.getRecentStories(member.getId());
+        Page<StoryDto.StorySummary> recentStories = libraryService.getRecentStories(member.getId(), Pageable.unpaged());
 
         // Then
-        assertThat(recentStories.get(0).getTitle()).isEqualTo("1번동화");
+        assertThat(recentStories.getContent().get(0).getTitle()).isEqualTo("1번동화");
     }
 
     @Test
@@ -190,11 +190,11 @@ class LibraryServiceTest {
         // When
         libraryService.addRecentStories(member.getId(), storyId);
         libraryService.addRecentStories(member.getId(), storyId2);
-        List<StoryDto.StorySummary> recentStories = libraryService.getRecentStories(member.getId());
+        Page<StoryDto.StorySummary> recentStories = libraryService.getRecentStories(member.getId(), Pageable.unpaged());
 
         // Then
-        assertThat(recentStories.size()).isEqualTo(2);
-        assertThat(recentStories.get(0).getTitle()).isEqualTo("3번동화");
+        assertThat(recentStories.getContent().size()).isEqualTo(2);
+        assertThat(recentStories.getContent().get(0).getTitle()).isEqualTo("3번동화");
     }
 
     @Test

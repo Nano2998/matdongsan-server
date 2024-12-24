@@ -71,8 +71,11 @@ public class LibraryController {
 
     @Operation(summary = "최근 본 동화 리스트 조회")
     @GetMapping("/recent")
-    public ResponseEntity<List<StoryDto.StorySummary>> getRecentStories() {
-        return ResponseEntity.ok().body(libraryService.getRecentStories(SecurityUtils.getLoggedInMemberId()));
+    public ResponseEntity<Page<StoryDto.StorySummary>> getRecentStories(
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok()
+                .body(libraryService.getRecentStories(SecurityUtils.getLoggedInMemberId(), pageable));
     }
 
     @Operation(summary = "동화 검색")
@@ -81,6 +84,7 @@ public class LibraryController {
             @RequestParam List<String> tags,
             Pageable pageable
     ) {
-        return ResponseEntity.ok().body(libraryService.searchStories(tags,pageable));
+        return ResponseEntity.ok()
+                .body(libraryService.searchStories(tags,pageable));
     }
 }
