@@ -70,9 +70,9 @@ public class MemberService {
      */
     public MemberDto.MemberDetailOther getOtherMemberDetail(Long memberId, Long authorId) {
         return MemberDto.MemberDetailOther.builder()
-                .member(memberRepository.findByIdOrThrow(memberId))
-                .storyCount(storyRepository.countByMemberId(memberId))
-                .likeCount(storyRepository.sumLikesByMemberId(memberId))
+                .member(memberRepository.findByIdOrThrow(authorId))
+                .storyCount(storyRepository.countByMemberId(authorId))
+                .likeCount(storyRepository.sumLikesByMemberId(authorId))
                 .isFollowed(followRepository.existsByFollowingIdAndFollowerId(memberId, authorId))
                 .build();
     }
