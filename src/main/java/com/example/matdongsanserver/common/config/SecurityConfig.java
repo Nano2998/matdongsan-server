@@ -78,16 +78,16 @@ public class SecurityConfig {
                 });
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/swagger-ui/**").permitAll()
-                        .requestMatchers("/api/swagger-resources/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/health").permitAll()
-                        .requestMatchers("/api/health/error").permitAll()
-                        .requestMatchers("/api/modules/upload").permitAll()
-                        .anyRequest().authenticated()
+//                        .requestMatchers("/").permitAll()
+//                        .requestMatchers("/api/auth/**").permitAll()
+//                        .requestMatchers("/api/swagger-ui.html").permitAll()
+//                        .requestMatchers("/api/swagger-ui/**").permitAll()
+//                        .requestMatchers("/api/swagger-resources/**").permitAll()
+//                        .requestMatchers("/v3/api-docs/**").permitAll()
+//                        .requestMatchers("/api/health").permitAll()
+//                        .requestMatchers("/api/health/error").permitAll()
+//                        .requestMatchers("/api/modules/upload").permitAll()
+                        .anyRequest().permitAll()
                 );
         http
                 .addFilterBefore(customJwtFilter, UsernamePasswordAuthenticationFilter.class);
