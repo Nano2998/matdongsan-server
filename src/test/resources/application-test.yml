@@ -18,11 +18,6 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/test
 
-jwt:
-  secret_key: test-secret-key
-  access-token-validity-in-seconds: 3600
-  refresh-token-validity-in-seconds: 864000
-
 de:
   flapdoodle:
     mongodb:

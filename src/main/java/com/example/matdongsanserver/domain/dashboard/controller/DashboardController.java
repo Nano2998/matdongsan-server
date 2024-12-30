@@ -32,7 +32,7 @@ public class DashboardController {
 
     @Operation(summary = "대시보드 QnA 모두보기")
     @GetMapping
-    public ResponseEntity<Page<DashboardDto.ParentQnaLogRequest>> getAllQna(
+    public ResponseEntity<Page<DashboardDto.ParentQnaLogResponse>> getAllQna(
             Pageable pageable
     ) {
         return ResponseEntity.ok().body(parentService.getQnaLog(SecurityUtils.getLoggedInMemberId(), pageable));
@@ -40,7 +40,7 @@ public class DashboardController {
 
     @Operation(summary = "특정 자녀 QnA 보기")
     @GetMapping("/{childId}")
-    public ResponseEntity<Page<DashboardDto.ParentQnaLogRequest>> getChildQna(
+    public ResponseEntity<Page<DashboardDto.ParentQnaLogResponse>> getChildQna(
             @PathVariable Long childId,
             Pageable pageable
     ) {

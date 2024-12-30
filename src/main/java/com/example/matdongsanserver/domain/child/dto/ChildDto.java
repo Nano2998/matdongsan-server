@@ -8,7 +8,7 @@ public class ChildDto {
     @Builder
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
     public static class ChildRequest {
         private String name;
         private Integer englishAge;
@@ -17,7 +17,7 @@ public class ChildDto {
 
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
     public static class ChildDetail {
         private Long id;
         private String name;
