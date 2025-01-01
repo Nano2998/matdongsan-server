@@ -11,7 +11,7 @@ public class StoryDto {
 
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
     public static class StoryCreationRequest {
         private String language;
         private int age;
@@ -21,7 +21,7 @@ public class StoryDto {
     @Builder
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
     public static class StoryUpdateRequest {
         private String title;
         private Boolean isPublic;
@@ -30,7 +30,7 @@ public class StoryDto {
 
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
     public static class StoryCreationResponse {
         private String id;
         private String title;
@@ -50,7 +50,7 @@ public class StoryDto {
 
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
     public static class StorySummary {
         private String id;
         private String title;

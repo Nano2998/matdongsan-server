@@ -80,7 +80,7 @@ public class DashboardService {
      * @param memberId
      * @return
      */
-    public Page<DashboardDto.ParentQnaLogRequest> getQnaLog(Long memberId, Pageable pageable) {
+    public Page<DashboardDto.ParentQnaLogResponse> getQnaLog(Long memberId, Pageable pageable) {
         if(!memberRepository.existsById(memberId)) {
             throw new MemberException(MemberErrorCode.MEMBER_NOT_FOUND);
         }
@@ -102,7 +102,7 @@ public class DashboardService {
      * @param pageable
      * @return
      */
-    public Page<DashboardDto.ParentQnaLogRequest> getChildQnaLog(Long childId, Pageable pageable) {
+    public Page<DashboardDto.ParentQnaLogResponse> getChildQnaLog(Long childId, Pageable pageable) {
         Page<StoryQuestion> childQuestions = storyQuestionRepository.findByChildId(childId, pageable);
         return mapQuestionsToDto(childQuestions);
     }
@@ -112,7 +112,7 @@ public class DashboardService {
      * @param childQuestions
      * @return
      */
-    private Page<DashboardDto.ParentQnaLogRequest> mapQuestionsToDto(Page<StoryQuestion> childQuestions) {
+    private Page<DashboardDto.ParentQnaLogResponse> mapQuestionsToDto(Page<StoryQuestion> childQuestions) {
         List<String> storyIds = childQuestions.getContent().stream()
                 .map(StoryQuestion::getStoryId)
                 .distinct()
@@ -121,7 +121,7 @@ public class DashboardService {
         Map<String, String> storyTitleMap = storyRepository.findByIdIn(storyIds).stream()
                 .collect(Collectors.toMap(Story::getId, Story::getTitle));
 
-        return childQuestions.map(question -> DashboardDto.ParentQnaLogRequest.builder()
+        return childQuestions.map(question -> DashboardDto.ParentQnaLogResponse.builder()
                 .id(question.getId())
                 .createAt(question.getCreatedAt())
                 .title(storyTitleMap.get(question.getStoryId()))

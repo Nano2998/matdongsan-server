@@ -101,7 +101,7 @@ class DashboardServiceTest {
         storyQuestionRepository.saveAll(List.of(question1, question2));
 
         // When
-        Page<DashboardDto.ParentQnaLogRequest> qnaLog = parentService.getQnaLog(member.getId(), Pageable.unpaged());
+        Page<DashboardDto.ParentQnaLogResponse> qnaLog = parentService.getQnaLog(member.getId(), Pageable.unpaged());
 
         // Then
         assertThat(qnaLog).isNotNull();
@@ -145,7 +145,7 @@ class DashboardServiceTest {
         storyQuestionRepository.saveAll(List.of(question1, question2, question3));
 
         // When
-        Page<DashboardDto.ParentQnaLogRequest> qnaLog = parentService.getChildQnaLog(child2.getId(), Pageable.unpaged());
+        Page<DashboardDto.ParentQnaLogResponse> qnaLog = parentService.getChildQnaLog(child2.getId(), Pageable.unpaged());
 
         // Then
         assertThat(qnaLog).isNotNull();

@@ -12,7 +12,7 @@ public class DashboardDto {
 
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
     public static class StoryQuestionResponse {
         private Long id;
         private String storyId;
@@ -33,7 +33,7 @@ public class DashboardDto {
 
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
     public static class QnAs {
         private Long id;
         private String question;
@@ -41,19 +41,19 @@ public class DashboardDto {
         private String answer;
 
         @Builder
-        public QnAs(QuestionAnswer questionAnswerPairs) {
-            this.id = questionAnswerPairs.getId();
-            this.question = questionAnswerPairs.getQuestion();
-            this.sampleAnswer = questionAnswerPairs.getSampleAnswer();
-            this.answer = questionAnswerPairs.getAnswer();
+        public QnAs(QuestionAnswer questionAnswer) {
+            this.id = questionAnswer.getId();
+            this.question = questionAnswer.getQuestion();
+            this.sampleAnswer = questionAnswer.getSampleAnswer();
+            this.answer = questionAnswer.getAnswer();
         }
     }
 
     @Builder
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
-    @AllArgsConstructor(access = AccessLevel.PROTECTED)
-    public static class ParentQnaLogRequest {
+    @AllArgsConstructor
+    public static class ParentQnaLogResponse {
         private Long id;
         private String title;
         private String child;
