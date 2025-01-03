@@ -6,15 +6,14 @@ import com.example.matdongsanserver.domain.follow.exception.FollowException;
 import com.example.matdongsanserver.domain.follow.repository.FollowRepository;
 import com.example.matdongsanserver.domain.member.dto.MemberDto;
 import com.example.matdongsanserver.domain.member.entity.Member;
-import com.example.matdongsanserver.domain.member.entity.Role;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +23,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
 @DisplayName("팔로우 서비스 테스트")
 class FollowServiceTest {
 
@@ -117,7 +117,6 @@ class FollowServiceTest {
     @DisplayName("팔로우 리스트 조회 성공")
     void getFollowers() {
         // Given
-        Member member = mock(Member.class);
         Member testMember1 = mock(Member.class);
         Member testMember2 = mock(Member.class);
 
@@ -144,15 +143,5 @@ class FollowServiceTest {
         assertThat(followers.size()).isEqualTo(2);
         assertThat(followers.get(0).getNickname()).isEqualTo("Follower1");
         assertThat(followers.get(1).getNickname()).isEqualTo("Follower2");
-    }
-
-    // 멤버 추가
-    private Member createMember(String email, String nickname, String profileImage) {
-        return Member.builder()
-                .email(email)
-                .nickname(nickname)
-                .profileImage(profileImage)
-                .role(Role.USER)
-                .build();
     }
 }

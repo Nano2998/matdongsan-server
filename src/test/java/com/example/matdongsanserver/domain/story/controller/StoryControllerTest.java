@@ -1,6 +1,5 @@
 package com.example.matdongsanserver.domain.story.controller;
 
-
 import com.example.matdongsanserver.TestSecurityConfig;
 import com.example.matdongsanserver.common.utils.SecurityUtils;
 import com.example.matdongsanserver.domain.auth.jwt.TokenProvider;

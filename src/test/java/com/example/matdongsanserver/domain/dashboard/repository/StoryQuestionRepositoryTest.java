@@ -4,7 +4,6 @@ import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.dashboard.exception.DashboardErrorCode;
 import com.example.matdongsanserver.domain.dashboard.exception.DashboardException;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
