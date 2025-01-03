@@ -10,8 +10,6 @@ import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
 import com.example.matdongsanserver.domain.child.repository.ChildRepository;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import com.example.matdongsanserver.domain.member.service.MemberService;
-import com.example.matdongsanserver.domain.module.service.ModuleService;
 import com.example.matdongsanserver.domain.library.AgeType;
 import com.example.matdongsanserver.domain.library.LangType;
 import com.example.matdongsanserver.domain.library.SortType;
@@ -23,54 +21,39 @@ import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.dashboard.repository.StoryQuestionRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
-import com.example.matdongsanserver.domain.story.service.StoryService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
-@Transactional
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 @DisplayName("대시보드 서비스 테스트")
 class DashboardServiceTest {
 
-    @Autowired
+    @Mock
+    DashboardService dashboardService;
+
+    @Mock
     StoryQuestionRepository storyQuestionRepository;
-    @Autowired
-    MemberService memberService;
-    @Autowired
+    @Mock
     MemberRepository memberRepository;
-    @Autowired
+    @Mock
     StoryRepository storyRepository;
-    @Autowired
-    StoryService storyService;
-    @Autowired
+    @InjectMocks
     LibraryService libraryService;
-    @Autowired
+    @Mock
     ChildRepository childRepository;
-    @Autowired
-    DashboardService parentService;
-    @Autowired
-    ModuleService moduleService;
-    @Autowired
+    @Mock
     ChildService childService;
 
-    @BeforeEach
-    void setUp() {
-        storyQuestionRepository.deleteAll();
-        storyRepository.deleteAll();
-        memberRepository.deleteAll();
-        childRepository.deleteAll();
-
-    }
 
     @Test
     @DisplayName("모든 QnA 로그 가져오기 성공")
@@ -101,7 +84,7 @@ class DashboardServiceTest {
         storyQuestionRepository.saveAll(List.of(question1, question2));
 
         // When
-        Page<DashboardDto.ParentQnaLogResponse> qnaLog = parentService.getQnaLog(member.getId(), Pageable.unpaged());
+        Page<DashboardDto.ParentQnaLogResponse> qnaLog = dashboardService.getQnaLog(member.getId(), Pageable.unpaged());
 
         // Then
         assertThat(qnaLog).isNotNull();
@@ -145,7 +128,7 @@ class DashboardServiceTest {
         storyQuestionRepository.saveAll(List.of(question1, question2, question3));
 
         // When
-        Page<DashboardDto.ParentQnaLogResponse> qnaLog = parentService.getChildQnaLog(child2.getId(), Pageable.unpaged());
+        Page<DashboardDto.ParentQnaLogResponse> qnaLog = dashboardService.getChildQnaLog(child2.getId(), Pageable.unpaged());
 
         // Then
         assertThat(qnaLog).isNotNull();
@@ -179,7 +162,7 @@ class DashboardServiceTest {
         StoryQuestion question = createQuestionWithAnswer(child, storyId, "질문 내용", "샘플 답변", "테스트코드 답변");
         StoryQuestion save = storyQuestionRepository.save(question);
         // When
-        List<DashboardDto.QnAs> qnaDetail = parentService.getQnaDetail(save.getId());
+        List<DashboardDto.QnAs> qnaDetail = dashboardService.getQnaDetail(save.getId());
 
         // Then
         assertThat(qnaDetail.get(0).getQuestion()).isEqualTo("질문 내용");
