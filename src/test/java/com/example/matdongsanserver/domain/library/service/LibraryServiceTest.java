@@ -1,19 +1,16 @@
 package com.example.matdongsanserver.domain.library.service;
 
-import com.example.matdongsanserver.domain.child.entity.Child;
 import com.example.matdongsanserver.domain.library.AgeType;
 import com.example.matdongsanserver.domain.library.LangType;
 import com.example.matdongsanserver.domain.library.SortType;
 import com.example.matdongsanserver.domain.member.entity.Member;
 import com.example.matdongsanserver.domain.member.entity.Role;
-import com.example.matdongsanserver.domain.member.repository.MemberRepository;
 import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.story.entity.StoryLike;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
 import com.example.matdongsanserver.domain.story.entity.mongo.Story;
 import com.example.matdongsanserver.domain.story.repository.StoryLikeRepository;
 import com.example.matdongsanserver.domain.story.repository.mongo.StoryRepository;
-import com.example.matdongsanserver.domain.story.service.StoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -33,11 +31,10 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
 @DisplayName("라이브러리 서비스 테스트")
 class LibraryServiceTest {
 
-    @InjectMocks
-    StoryService storyService;
     @InjectMocks
     LibraryService libraryService;
     @Mock
@@ -45,12 +42,9 @@ class LibraryServiceTest {
     @Mock
     StoryRepository storyRepository;
     @Mock
-    MemberRepository memberRepository;
-    @Mock
     RedisTemplate<String, String> redisTemplate;
 
     private Member testMember;
-    private Child testChild;
     private static final int MAX_RECENT_TALES = 50;
     private static final int TTL_DAYS = 5;
 
@@ -58,7 +52,6 @@ class LibraryServiceTest {
     @BeforeEach
     void setUp() {
         testMember = createMember("test@naver.com","test","testImg");
-        testChild = createChild("testChild", 3, 3,testMember);
     }
 
     @Test
@@ -224,15 +217,6 @@ class LibraryServiceTest {
                 .build();
     }
 
-
-    private Child createChild(String name, Integer koreanAge, Integer englishAge,Member member) {
-        return Child.builder()
-                .name(name)
-                .koreanAge(koreanAge)
-                .englishAge(englishAge)
-                .member(member)
-                .build();
-    }
     // 동화 추가
     private List<Story> createStories(Member member, List<String> titles) {
         return titles.stream()

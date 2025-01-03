@@ -1,20 +1,13 @@
 package com.example.matdongsanserver.domain.dashboard.service;
 
-import com.example.matdongsanserver.domain.child.dto.ChildDto;
-import com.example.matdongsanserver.domain.child.exception.ChildErrorCode;
-import com.example.matdongsanserver.domain.child.exception.ChildException;
-import com.example.matdongsanserver.domain.child.service.ChildService;
+import com.example.matdongsanserver.common.external.ExternalApiRequest;
 import com.example.matdongsanserver.domain.child.entity.Child;
-import com.example.matdongsanserver.domain.library.service.LibraryService;
-import com.example.matdongsanserver.domain.member.entity.Member;
-import com.example.matdongsanserver.domain.member.entity.Role;
+import com.example.matdongsanserver.domain.dashboard.repository.QuestionAnswerRepository;
 import com.example.matdongsanserver.domain.child.repository.ChildRepository;
+import com.example.matdongsanserver.domain.member.exception.MemberErrorCode;
+import com.example.matdongsanserver.domain.member.exception.MemberException;
 import com.example.matdongsanserver.domain.member.repository.MemberRepository;
-import com.example.matdongsanserver.domain.library.AgeType;
-import com.example.matdongsanserver.domain.library.LangType;
-import com.example.matdongsanserver.domain.library.SortType;
 import com.example.matdongsanserver.domain.dashboard.dto.DashboardDto;
-import com.example.matdongsanserver.domain.story.dto.StoryDto;
 import com.example.matdongsanserver.domain.dashboard.entity.QuestionAnswer;
 import com.example.matdongsanserver.domain.dashboard.entity.StoryQuestion;
 import com.example.matdongsanserver.domain.story.entity.mongo.Language;
@@ -28,197 +21,174 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
 @DisplayName("대시보드 서비스 테스트")
 class DashboardServiceTest {
 
-    @Mock
-    DashboardService dashboardService;
-
-    @Mock
-    StoryQuestionRepository storyQuestionRepository;
-    @Mock
-    MemberRepository memberRepository;
-    @Mock
-    StoryRepository storyRepository;
     @InjectMocks
-    LibraryService libraryService;
-    @Mock
-    ChildRepository childRepository;
-    @Mock
-    ChildService childService;
+    private DashboardService dashboardService;
 
+    @Mock
+    private StoryQuestionRepository storyQuestionRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
+
+    @Mock
+    private QuestionAnswerRepository questionAnswerRepository;
+
+    @Mock
+    private ChildRepository childRepository;
+
+    @Mock
+    private StoryRepository storyRepository;
+
+    @Mock
+    private ExternalApiRequest externalApiRequest;
 
     @Test
-    @DisplayName("모든 QnA 로그 가져오기 성공")
+    @DisplayName("동화 질문 생성 성공")
+    void registerQuestions() {
+        // Given
+        String storyId = "story123";
+        Story story = mock(Story.class);
+        StoryQuestion storyQuestion = mock(StoryQuestion.class);
+
+        List<Map<String, String>> parsedQuestions = List.of(
+                Map.of("Q", "질문1", "A", "답변1"),
+                Map.of("Q", "질문2", "A", "답변2")
+        );
+
+        when(storyRepository.findByIdOrThrow(storyId)).thenReturn(story);
+        when(story.getLanguage()).thenReturn(Language.KO);
+        when(story.getAge()).thenReturn(5);
+        when(story.getContent()).thenReturn("동화 내용");
+        when(storyQuestionRepository.save(any(StoryQuestion.class))).thenReturn(storyQuestion);
+        when(externalApiRequest.sendQuestionRequest(any(), anyInt(), any())).thenReturn(parsedQuestions);
+
+        // When
+        DashboardDto.StoryQuestionResponse response = dashboardService.registerQuestions(storyId);
+
+        // Then
+        assertThat(response).isNotNull();
+        verify(storyQuestionRepository, times(1)).save(any(StoryQuestion.class));
+        verify(questionAnswerRepository, times(1)).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("부모 QnA 로그 조회 성공")
     void getQnaLog() {
         // Given
-        // 1. 회원 생성
-        Member member = createAndSaveMember();
+        Long memberId = 1L;
+        Child child = mock(Child.class);
+        StoryQuestion storyQuestion = mock(StoryQuestion.class);
+        Story story = mock(Story.class);
 
-        // 2. 동화 제작
-        createStory(member.getNickname(), member.getId(), "테스트 제목", Language.KO, 4);
+        List<Child> children = List.of(child);
+        Page<StoryQuestion> childQuestions = new PageImpl<>(List.of(storyQuestion));
 
-        // 3. 자녀 등록
-        ChildDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
-        childService.registerChild(member.getId(), childRequest);
-        List<ChildDto.ChildDetail> childDetails = childService.getChildDetails(member.getId());
-        Long childId = childDetails.get(0).getId();
-
-        Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new ChildException(ChildErrorCode.CHILD_NOT_FOUND));
-
-        // 4. 스토리 id 가져오기
-        Page<StoryDto.StorySummary> stories = libraryService.getStories(AgeType.LV1, LangType.KO, SortType.RECENT, Pageable.unpaged());
-        String storyId = stories.getContent().get(0).getId();
-
-        // 5. 동화 질문 및 답변 생성하기
-        StoryQuestion question1 = createQuestionWithAnswer(child, storyId, "질문 내용", "샘플 답변", "테스트코드 답변");
-        StoryQuestion question2 = createQuestionWithAnswer(child, storyId, "질문 내용2", "샘플 답변2", "테스트코드 답변2");
-        storyQuestionRepository.saveAll(List.of(question1, question2));
+        when(memberRepository.existsById(memberId)).thenReturn(true);
+        when(childRepository.findByMemberId(memberId)).thenReturn(children);
+        when(child.getId()).thenReturn(1L);
+        when(storyQuestionRepository.findAllByChildIdIn(anyList(), any())).thenReturn(childQuestions);
+        when(storyRepository.findByIdIn(anyList())).thenReturn(List.of(story));
+        when(story.getId()).thenReturn("story123");
+        when(story.getTitle()).thenReturn("테스트 동화");
+        when(storyQuestion.getId()).thenReturn(1L);
+        when(storyQuestion.getStoryId()).thenReturn("story123");
+        when(storyQuestion.getChild()).thenReturn(child);
+        when(child.getName()).thenReturn("테스트 자녀");
 
         // When
-        Page<DashboardDto.ParentQnaLogResponse> qnaLog = dashboardService.getQnaLog(member.getId(), Pageable.unpaged());
+        Page<DashboardDto.ParentQnaLogResponse> result = dashboardService.getQnaLog(memberId, Pageable.unpaged());
 
         // Then
-        assertThat(qnaLog).isNotNull();
-        assertThat(qnaLog.getContent()).hasSize(2); // 사이즈 2 검증
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("테스트 동화");
     }
 
     @Test
-    @DisplayName("자녀 QnA 모두보기")
-    void getChildQna() {
+    @DisplayName("부모 QnA 로그 조회 실패 - 멤버 없음")
+    void getQnaLog_Fail_MemberNotFound() {
         // Given
-        // 1. 회원 생성
-        Member member = createAndSaveMember();
-
-        // 2. 동화 제작
-        createStory(member.getNickname(), member.getId(), "테스트 제목", Language.KO, 4);
-
-        // 3. 자녀 등록
-        ChildDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
-        ChildDto.ChildRequest childRequest2 = createChildRequest("테스트2", 3, 3);
-        childService.registerChild(member.getId(), childRequest);
-        childService.registerChild(member.getId(), childRequest2);
-        List<ChildDto.ChildDetail> childDetails = childService.getChildDetails(member.getId());
-        Long childId = childDetails.get(0).getId();
-        Long childId2 = childDetails.get(1).getId();
-
-        Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new ChildException(ChildErrorCode.CHILD_NOT_FOUND));
-
-        Child child2= childRepository.findById(childId2)
-                .orElseThrow(() -> new ChildException(ChildErrorCode.CHILD_NOT_FOUND));
-
-        // 4. 스토리 id 가져오기
-        Page<StoryDto.StorySummary> stories = libraryService.getStories(AgeType.LV1, LangType.KO, SortType.RECENT, Pageable.unpaged());
-        String storyId = stories.getContent().get(0).getId();
-
-        // 5. 동화 질문 및 답변 생성
-        StoryQuestion question1 = createQuestionWithAnswer(child, storyId, "질문 내용", "샘플 답변", "테스트코드 답변");
-        StoryQuestion question2 = createQuestionWithAnswer(child2, storyId, "질문 내용2", "샘플 답변2", "테스트코드 답변2");
-        StoryQuestion question3 = createQuestionWithAnswer(child2, storyId, "질문 내용3", "샘플 답변3", "테스트코드 답변2");
-
-        storyQuestionRepository.saveAll(List.of(question1, question2, question3));
+        Long memberId = 1L;
+        when(memberRepository.existsById(memberId)).thenReturn(false);
 
         // When
-        Page<DashboardDto.ParentQnaLogResponse> qnaLog = dashboardService.getChildQnaLog(child2.getId(), Pageable.unpaged());
+        MemberException memberException = assertThrows(MemberException.class, () ->
+                dashboardService.getQnaLog(memberId, Pageable.unpaged())
+        );
 
         // Then
-        assertThat(qnaLog).isNotNull();
-        assertThat(qnaLog.getContent()).hasSize(2); // 사이즈 2 검증
+        assertThat(memberException.getErrorCode())
+                .isEqualTo(MemberErrorCode.MEMBER_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("QnA 상세보기")
+    @DisplayName("자녀 QnA 로그 조회 성공")
+    void getChildQnaLog() {
+        // Given
+        Long childId = 1L;
+        StoryQuestion storyQuestion = mock(StoryQuestion.class);
+        Story story = mock(Story.class);
+
+        Page<StoryQuestion> childQuestions = new PageImpl<>(List.of(storyQuestion));
+
+        when(storyQuestionRepository.findByChildId(childId, Pageable.unpaged())).thenReturn(childQuestions);
+        when(storyRepository.findByIdIn(anyList())).thenReturn(List.of(story));
+        when(story.getId()).thenReturn("story123");
+        when(story.getTitle()).thenReturn("테스트 동화");
+        when(storyQuestion.getId()).thenReturn(1L);
+        when(storyQuestion.getStoryId()).thenReturn("story123");
+        when(storyQuestion.getChild()).thenReturn(mock(Child.class));
+
+        // When
+        Page<DashboardDto.ParentQnaLogResponse> result = dashboardService.getChildQnaLog(childId, Pageable.unpaged());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("QnA 상세 조회 성공")
     void getQnaDetail() {
         // Given
-        // 1. 회원 생성
-        Member member = createAndSaveMember();
+        Long qnaId = 1L;
+        StoryQuestion storyQuestion = mock(StoryQuestion.class);
+        QuestionAnswer answer1 = mock(QuestionAnswer.class);
+        QuestionAnswer answer2 = mock(QuestionAnswer.class);
 
-        // 2. 동화 제작
-        createStory(member.getNickname(), member.getId(), "테스트 제목", Language.KO, 4);
+        when(storyQuestionRepository.findByIdOrThrow(qnaId)).thenReturn(storyQuestion);
+        when(storyQuestion.getQuestionAnswers()).thenReturn(List.of(answer1, answer2));
+        when(answer1.getQuestion()).thenReturn("질문1");
+        when(answer1.getSampleAnswer()).thenReturn("샘플 답변1");
+        when(answer1.getAnswer()).thenReturn("최종 답변1");
+        when(answer2.getQuestion()).thenReturn("질문2");
+        when(answer2.getSampleAnswer()).thenReturn("샘플 답변2");
+        when(answer2.getAnswer()).thenReturn("최종 답변2");
 
-        // 3. 자녀 등록
-        ChildDto.ChildRequest childRequest = createChildRequest("테스트", 4, 4);
-        childService.registerChild(member.getId(), childRequest);
-        List<ChildDto.ChildDetail> childDetails = childService.getChildDetails(member.getId());
-        Long childId = childDetails.get(0).getId();
-
-        Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new ChildException(ChildErrorCode.CHILD_NOT_FOUND));
-
-        // 4. 스토리 id 가져오기
-        Page<StoryDto.StorySummary> stories = libraryService.getStories(AgeType.LV1, LangType.KO, SortType.RECENT, Pageable.unpaged());
-        String storyId = stories.getContent().get(0).getId();
-
-        // 5. 동화 질문 및 답변 생성
-        StoryQuestion question = createQuestionWithAnswer(child, storyId, "질문 내용", "샘플 답변", "테스트코드 답변");
-        StoryQuestion save = storyQuestionRepository.save(question);
         // When
-        List<DashboardDto.QnAs> qnaDetail = dashboardService.getQnaDetail(save.getId());
+        List<DashboardDto.QnAs> result = dashboardService.getQnaDetail(qnaId);
 
         // Then
-        assertThat(qnaDetail.get(0).getQuestion()).isEqualTo("질문 내용");
-        assertThat(qnaDetail.get(0).getSampleAnswer()).isEqualTo("샘플 답변");
-        assertThat(qnaDetail.get(0).getAnswer()).isEqualTo("테스트코드 답변");
-    }
-
-
-    // 멤버 생성
-    private Member createAndSaveMember() {
-        Member member = Member.builder()
-                .email("test@naver.com")
-                .nickname("test")
-                .profileImage("testImg")
-                .role(Role.USER)
-                .build();
-        return memberRepository.save(member);
-    }
-
-    // 동화 생성
-    private void createStory(String author, Long memberId, String title, Language language, int age) {
-        storyRepository.save(Story.builder()
-                .age(age)
-                .author(author)
-                .title(title)
-                .content("테스트내용")
-                .memberId(memberId)
-                .given("테스트프롬프트")
-                .language(language)
-                .build());
-    }
-    // 자녀 추가
-    private ChildDto.ChildRequest createChildRequest(String name, int englishAge, int koreanAge) {
-        return ChildDto.ChildRequest.builder()
-                .name(name)
-                .englishAge(englishAge)
-                .koreanAge(koreanAge)
-                .build();
-    }
-
-    // 동화 생성 및 답변 등록하기
-    private StoryQuestion createQuestionWithAnswer(Child child, String storyId, String questionText, String sampleAnswer, String finalAnswer) {
-        StoryQuestion storyQuestion = StoryQuestion.builder()
-                .language(Language.KO)
-                .storyId(storyId)
-                .build();
-
-        QuestionAnswer qa = QuestionAnswer.builder()
-                .question(questionText)
-                .sampleAnswer(sampleAnswer)
-                .storyQuestion(storyQuestion)
-                .build();
-        qa.updateAnswer(finalAnswer);
-
-        storyQuestion.updateChild(child);
-
-        return storyQuestion;
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getQuestion()).isEqualTo("질문1");
     }
 }
